@@ -1,0 +1,179 @@
+#include 'minigui.ch'
+#include "hbclass.ch"
+
+
+#define MSG_TYPE_LEN 4
+#define MSG_PREFIX "AV_HTTP"
+#define CLRF CHR(10) + CHR(13)
+
+#define MESSAGE_INITIALIZE "INIT"
+#define MESSAGE_RESPONSE "RESP"
+#define MESSAGE_REQUEST "REQT"
+
+#define STATUS_CREATED 1
+#define STATUS_SENDED 2
+#define STATUS_COMPLETED 3
+
+CREATE CLASS HttpClient
+
+    PROTECTED:
+    VAR nOwnerWindow  
+    VAR nInstance
+    VAR nTargetWindow
+    VAR hSendingRequest
+    VAR hOptions
+
+    EXPORTED: 
+    METHOD New(nOwnerWindow, cPath, hOptions)
+    METHOD OnMessage(cPayload)
+    METHOD DoHttpEvents()
+    METHOD Request(hParams, xCallback)
+    METHOD Release()     
+
+ENDCLASS
+
+
+METHOD New(nOwnerWindow, cPath, hOptions) CLASS HttpClient
+    LOCAL cArguments
+    LOCAL hDefaults 
+    LOCAL oError
+    ::nOwnerWindow := nOwnerWindow
+    ::hSendingRequest := HASH()
+
+    hDefaults := HASH()
+    hDefaults["Arguments"] := "--hwnd=%HANDLE% --ttl=%TTL%"
+    hDefaults["ClientTTL"] := 60
+    hDefaults["Timeout"] := 5
+
+    IF ValType(hOptions) != 'H'
+        hOptions := HASH()
+    ENDIF
+    hOptions := HMerge(hOptions, hDefaults)
+    ::hOptions := hOptions
+
+    IF FILE(cPath) != .T.
+        oError := ErrorNew()
+        oError:subsystem := "HttpClient"
+        oError:description = "File not found!"
+        Throw(oError)        
+    ENDIF
+
+    cArguments := hOptions["Arguments"]
+    cArguments := StrTran(cArguments, "%HANDLE%", ALLTRIM(STR(nOwnerWindow)))
+    cArguments := StrTran(cArguments, "%TTL%", ALLTRIM(STR(hOptions["ClientTTL"])))
+
+    ::nInstance := ShellExecuteEx( 0, "open", cPath, cArguments, , SW_SHOWNORMAL )
+RETURN SELF
+
+
+METHOD Release() CLASS HttpClient
+    TerminateProcess(::nInstance)
+RETURN SELF
+
+
+METHOD Request(hParams, xCallback) CLASS HttpClient
+    LOCAL nKeyLen := 8
+    LOCAL cKey := "", nI
+    LOCAL hRecord := HASH()
+    FOR nI := 1 TO nKeyLen
+        cKey := cKey + CHR(HB_RandomInt(0,255))
+    NEXT
+    cKey := hb_base64Encode(cKey)
+    hRecord["Query"] := hParams
+    hRecord["Callback"] := xCallback
+    hRecord["Status"] := STATUS_CREATED
+    // Old version:
+    //hRecord["ExpiresIn"] := UNIXTIME() + ::hOptions["Timeout"]    
+    ::hSendingRequest[cKey] := hRecord
+    ::DoHttpEvents()
+RETURN SELF
+
+METHOD DoHttpEvents() CLASS HttpClient
+    LOCAL nI, xItem, cData, cKey, aKeys
+    LOCAL nCurrentTime
+    LOCAL xSendData
+    //LOCAL cTemp
+
+    IF ::nTargetWindow == NIL
+        RETURN SELF
+    ENDIF
+
+    cData := "DoHttpEvents: " + CLRF
+    aKeys := HGetKeys(::hSendingRequest)
+    FOR nI := 1 TO LEN(aKeys)
+        cKey := aKeys[nI]
+        // If key was removed by another loop
+        IF !HHasKey(::hSendingRequest, cKey)
+            LOOP
+        ENDIF
+        xItem := ::hSendingRequest[cKey]
+
+        DO CASE
+            CASE xItem["Status"] == STATUS_CREATED
+                xSendData := {"Key" => cKey, "Query" => xItem["Query"]}
+                xSendData := HB_JsonEncode(xSendData, .T.)
+                xSendData := MSG_PREFIX + MESSAGE_REQUEST + xSendData
+                SendMessageData(::nTargetWindow, xSendData)     
+                xItem["ExpiresTime"] := UNIXTIME() + ::hOptions["Timeout"]                           
+                xItem["Status"] := STATUS_SENDED
+            CASE xItem["Status"] == STATUS_SENDED
+                nCurrentTime := UNIXTIME()
+                IF nCurrentTime > xItem["ExpiresTime"]
+                    HDel(::hSendingRequest, cKey)                    
+                    MsgInfo("Ключ истёк и был удалён из хэша: " + cKey)
+                ENDIF
+            CASE xItem["Status"] == STATUS_COMPLETED
+                MsgInfo("Успешно завершено!")
+                HDel(::hSendingRequest, cKey)                
+        ENDCASE
+
+        cData := cData + cKey + ": " + HB_JsonEncode(xItem) + CLRF
+    NEXT
+RETURN SELF
+
+METHOD OnMessage(cPayload) CLASS HttpClient
+
+    LOCAL cType, cBody 
+    LOCAL nSize
+    LOCAL nMinLength := LEN(MSG_PREFIX) + MSG_TYPE_LEN
+
+    IF LEN(cPayload) <= nMinLength
+        RETURN .F.
+    ENDIF
+
+    IF SUBSTR(cPayload, 1, LEN(MSG_PREFIX)) != MSG_PREFIX
+        RETURN .F.
+    ENDIF
+
+    nSize := 1 + LEN(MSG_PREFIX)
+    cType := SUBSTR(cPayload, nSize, MSG_TYPE_LEN)
+
+    nSize := nSize + MSG_TYPE_LEN
+    cBody := SUBSTR(cPayload, nSize, LEN(cPayload) - nSize + 1)
+
+    do case
+    case cType == MESSAGE_INITIALIZE
+       ::nTargetWindow = VAL(cBody)
+    case cType == MESSAGE_RESPONSE
+        MsgInfo("Response!")
+    endcase
+    ::DoHttpEvents()    
+
+RETURN .T.
+
+#pragma BEGINDUMP
+
+#include <windows.h>
+#include <hbapi.h>
+#include <shlobj.h>
+#include <time.h>
+
+HB_FUNC( TERMINATEPROCESS ) {
+  hb_retni( (BOOL) TerminateProcess( (HANDLE) hb_parni(1),0) );
+}
+
+HB_FUNC( UNIXTIME ) {
+    hb_retnl(time(NULL));
+}
+
+#pragma ENDDUMP

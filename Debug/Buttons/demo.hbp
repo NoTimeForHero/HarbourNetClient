@@ -1,0 +1,29 @@
+# Keys when compiling .prg files
+-prgflag=-w2 -es1 
+
+# Enable multi/single-thread Harbour VM
+-mt 
+
+# Incremental-Compile mode
+-inc
+
+# folder where there will be all * .obj
+-workdir=OBJ\BCC
+
+# the name of the EXE module
+-odemo
+
+# Debug info: 
+# https://github.com/APerricone/harbourCodeExtension/wiki/Debugger
+# -b
+# debug
+
+# list all * .prg
+window
+
+# project Resources
+# demo.rc
+
+# paths to the main and extension *.Lib
+# -hblib
+-lminigui

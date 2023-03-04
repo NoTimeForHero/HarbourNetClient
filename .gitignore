@@ -1,0 +1,7 @@
+*.log
+OBJ
+*.exe
+*.obj
+*.tds
+ErrorLog.htm
+checkstatic.txt
