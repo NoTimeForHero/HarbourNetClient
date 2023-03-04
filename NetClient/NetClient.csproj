@@ -67,23 +67,23 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ProgramArgs.cs" />
-    <Compile Include="Extensions.cs" />
-    <Compile Include="FormDebug.cs">
+    <Compile Include="Utils\ProgramArgs.cs" />
+    <Compile Include="Utils\Extensions.cs" />
+    <Compile Include="Forms\FormDebug.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="FormDebug.Designer.cs">
+    <Compile Include="Forms\FormDebug.Designer.cs">
       <DependentUpon>FormDebug.cs</DependentUpon>
     </Compile>
-    <Compile Include="MessageBus.cs" />
+    <Compile Include="Utils\MessageBus.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\MainService.cs" />
-    <Compile Include="WatchableForm.cs">
+    <Compile Include="Forms\WatchableForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Win32.cs" />
-    <EmbeddedResource Include="FormDebug.resx">
+    <Compile Include="Utils\Win32.cs" />
+    <EmbeddedResource Include="Forms\FormDebug.resx">
       <DependentUpon>FormDebug.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Properties\Resources.resx">
@@ -96,7 +96,7 @@
       <DependentUpon>Resources.resx</DependentUpon>
       <DesignTime>True</DesignTime>
     </Compile>
-    <EmbeddedResource Include="WatchableForm.resx">
+    <EmbeddedResource Include="Forms\WatchableForm.resx">
       <DependentUpon>WatchableForm.cs</DependentUpon>
     </EmbeddedResource>
     <None Include="app.config" />

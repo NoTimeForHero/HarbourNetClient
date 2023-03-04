@@ -21,7 +21,7 @@ namespace NetClient
             try
             {
                 logger.Info("Application started");
-                logger.Info("CLI args: " + string.Join(", ", args));
+                logger.Info("CLI args: " + (args.Length > 0 ? string.Join(", ", args) : "[Empty]"));
 
                 if (args.Length == 0)
                 {
