@@ -22,6 +22,7 @@ CREATE CLASS HttpClient
     VAR nTargetWindow
     VAR hSendingRequest
     VAR hOptions
+    METHOD Log(xMessage)
 
     EXPORTED: 
     METHOD New(nOwnerWindow, cPath, hOptions)
@@ -44,12 +45,16 @@ METHOD New(nOwnerWindow, cPath, hOptions) CLASS HttpClient
     hDefaults["Arguments"] := "--hwnd=%HANDLE% --ttl=%TTL%"
     hDefaults["ClientTTL"] := 60
     hDefaults["Timeout"] := 5
+    hDefaults["Debug"] := .T.
 
     IF ValType(hOptions) != 'H'
         hOptions := HASH()
     ENDIF
     hOptions := HMerge(hOptions, hDefaults)
     ::hOptions := hOptions
+
+    ::Log("Created new instance!")
+    ::Log({nOwnerWindow, cPath, hOptions})
 
     IF FILE(cPath) != .T.
         oError := ErrorNew()
@@ -66,8 +71,22 @@ METHOD New(nOwnerWindow, cPath, hOptions) CLASS HttpClient
 RETURN SELF
 
 
+METHOD Log(xMessage) CLASS HttpClient
+    IF ::hOptions["Debug"] != .T.
+        RETURN NIL
+    ENDIF
+    //#ifndef _HB_DEBUG
+    ? HB_DATETIME(), "[HttpClient]", HB_JsonEncode(xMessage, .F.)
+    // #end
+RETURN NIL
+
+
 METHOD Release() CLASS HttpClient
     TerminateProcess(::nInstance)
+    ::nInstance := NIL
+    ::nOwnerWindow := NIL
+    ::hSendingRequest := HASH()
+    ::Log("Shutdown")
 RETURN SELF
 
 
@@ -116,15 +135,16 @@ METHOD DoHttpEvents() CLASS HttpClient
                 SendMessageData(::nTargetWindow, xSendData)     
                 xItem["ExpiresTime"] := UNIXTIME() + ::hOptions["Timeout"]                           
                 xItem["Status"] := STATUS_SENDED
+                ::Log({"Sending new request: ", xItem})
             CASE xItem["Status"] == STATUS_SENDED
                 nCurrentTime := UNIXTIME()
                 IF nCurrentTime > xItem["ExpiresTime"]
                     HDel(::hSendingRequest, cKey)                    
-                    MsgInfo("Ключ истёк и был удалён из хэша: " + cKey)
+                    ::Log({"Request expired: ", cKey})
                 ENDIF
             CASE xItem["Status"] == STATUS_COMPLETED
-                MsgInfo("Успешно завершено!")
                 HDel(::hSendingRequest, cKey)                
+                ::Log({"Request completed: ", cKey})                
         ENDCASE
 
         cData := cData + cKey + ": " + HB_JsonEncode(xItem) + CLRF
@@ -154,8 +174,9 @@ METHOD OnMessage(cPayload) CLASS HttpClient
     do case
     case cType == MESSAGE_INITIALIZE
        ::nTargetWindow = VAL(cBody)
+       ::Log("Initialized with child HWND: " + cBody)
     case cType == MESSAGE_RESPONSE
-        MsgInfo("Response!")
+        ::Log("Response?")
     endcase
     ::DoHttpEvents()    
 

@@ -8,20 +8,28 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using NLog;
+using NLog.Targets;
 
 namespace NetClient
 {
     public partial class FormDebug : WatchableForm
     {
+        private MemoryTarget target;
+
         public FormDebug()
         {
             InitializeComponent();
-            textBox1.Text = "";
+            textLogs.Text = "";
+
+            target = LogManager.Configuration.AllTargets.OfType<MemoryTarget>().FirstOrDefault();
+            timerRefreshLogs_Tick(null, null);
         }
 
-        public override void Log(string message)
+        private void timerRefreshLogs_Tick(object sender, EventArgs e)
         {
-            textBox1.Text += message + "\r\n";
+            if (target == null) return;
+            textLogs.Text = string.Join(Environment.NewLine, target.Logs);
         }
     }
 }

@@ -43,11 +43,9 @@ FUNCTION OnInit(nHandle)
   LOCAL cPath
   LOCAL cHandle := ALLTRIM(STR(nHandle))
   LOCAL cSelfHandle := ALLTRIM(STR(ThisWindow.Handle))
-  //#InputBox('Handle: ', 'Handle', cHandle)
 
   cPath := GetStartUpFolder() + "\NetClient\bin\Debug\NetClient.exe"
   OClient := HttpClient():New(nHandle, cPath)
-  //MakeTestRequest()
 RETURN NIL
 
 FUNCTION MakeTestRequest() 
@@ -57,7 +55,6 @@ FUNCTION MakeTestRequest()
 	hParams["Method"] = "BODY"
 	hParams["Headers"] = { "Content-Type" => "application/json"}
 	hParams["Body"] = '{"key": "value"}'
-	MsgInfo("Click->MakeTestRequest")
 	OClient:Request(hParams, xSuccess)
 RETURN NIL
 
@@ -66,6 +63,5 @@ FUNCTION OnRelease
 RETURN NIL
 
 FUNCTION OnWmCopyData(cData)
-   // MsgInfo(cData)
    OClient:OnMessage(cData)   
 RETURN NIL

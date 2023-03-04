@@ -5,23 +5,36 @@ using System.Linq;
 using System.Windows.Forms;
 using CommandLine;
 using CommandLine.Text;
+using NetClient.Services;
+using NLog;
+using Unity;
 
 namespace NetClient
 {
     internal static class Program
     {
+        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+
         [STAThread]
         static void Main(string[] args)
         {
             try
             {
-                if (args.Length == 0) args = new[] { "--hwnd=0", "--ttl=60" };
-                // MessageBox.Show(string.Join(", ", args));
+                logger.Info("Application started");
+                logger.Info("CLI args: " + string.Join(", ", args));
+
+                if (args.Length == 0)
+                {
+                    args = new[] { "--hwnd=0", "--ttl=60" };
+                    logger.Info("Overriding args with debug values: " + string.Join(", ", args));
+                }
+
                 Run(args);
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.ToString(), "Fatal Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                logger.Fatal(ex);
             }
         }
 
@@ -33,31 +46,18 @@ namespace NetClient
             {
                 var message = "Invalid command line arguments:\n" + string.Join("\n", errors);
                 MessageBox.Show(message, "Invalid CLI args!", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                logger.Fatal(message);
                 return;
             }
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
-            var options = parsed.Value;
-            var form = new FormDebug();
-            form.Shown += (o, ev) =>
-            {
-                form.Log("My handle: " + form.Handle);
-                form.Log("Parent handler: " + options.HostHWND);
-                var payload = form.Handle.ToString();
-                var message = MessageBus.Serialize(MessageBus.Types.Initialize, payload);
-                Win32.SendDataToWindow(new IntPtr(options.HostHWND), message);
-                // Win32.SendDataToWindow(form.Handle, File.ReadAllBytes("message.txt"));
-            };
-            form.OnCopyDataMessage += (raw) =>
-            {
-                // File.WriteAllBytes("message.txt", raw);
-                var message = MessageBus.Deserialize(raw);
-                if (message == null) return;
-                MessageBox.Show(form, $"Message: {message.Type}\n{message.Payload}");
-            };
-            Application.Run(form);
+            var container = new UnityContainer();
+            container.RegisterType<WatchableForm, FormDebug>();
+            container.RegisterSingleton<MainService>();
+            container.RegisterInstance(parsed.Value);
+            container.Resolve<MainService>().Run();
         }
     }
 }

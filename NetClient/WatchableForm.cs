@@ -10,8 +10,6 @@ namespace NetClient
 {
     public class WatchableForm : Form
     {
-        public virtual void Log(string message) {}
-
         public event Action<byte[]> OnCopyDataMessage;
 
         protected override void WndProc(ref Message m)
