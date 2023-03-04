@@ -51,10 +51,10 @@ RETURN NIL
 FUNCTION MakeTestRequest() 
 	LOCAL xSuccess := {|xResult| MsgInfo(HB_JsonEncode(xResult, .T.)) }
 	LOCAL hParams := HASH()
-	hParams["Url"] = "https://jsonplaceholder.typicode.com/posts"
-	hParams["Method"] = "BODY"
+	hParams["Url"] = "https://jsonplaceholder.typicode.com/users"
+	hParams["Method"] = "GET"
 	hParams["Headers"] = { "Content-Type" => "application/json"}
-	hParams["Body"] = '{"key": "value"}'
+	//hParams["Body"] = '{"key": "value"}'
 	OClient:Request(hParams, xSuccess)
 RETURN NIL
 

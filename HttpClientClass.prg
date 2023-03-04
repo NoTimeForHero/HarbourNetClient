@@ -22,6 +22,7 @@ CREATE CLASS HttpClient
     VAR nTargetWindow
     VAR hSendingRequest
     VAR hOptions
+    VAR lDisposed
     METHOD Log(xMessage)
 
     EXPORTED: 
@@ -40,6 +41,7 @@ METHOD New(nOwnerWindow, cPath, hOptions) CLASS HttpClient
     LOCAL oError
     ::nOwnerWindow := nOwnerWindow
     ::hSendingRequest := HASH()
+    ::lDisposed := .F.    
 
     hDefaults := HASH()
     hDefaults["Arguments"] := "--hwnd=%HANDLE% --ttl=%TTL%"
@@ -86,14 +88,23 @@ METHOD Release() CLASS HttpClient
     ::nInstance := NIL
     ::nOwnerWindow := NIL
     ::hSendingRequest := HASH()
+    ::lDisposed := .T.
     ::Log("Shutdown")
 RETURN SELF
 
 
 METHOD Request(hParams, xCallback) CLASS HttpClient
     LOCAL nKeyLen := 8
-    LOCAL cKey := "", nI
+    LOCAL cKey := "", nI, oError
     LOCAL hRecord := HASH()
+
+    IF ::lDisposed == .T.
+        oError := ErrorNew()
+        oError:subsystem := "HttpClient"
+        oError:description = "Access to disposed object!"
+        Throw(oError)        
+    ENDIF
+
     FOR nI := 1 TO nKeyLen
         cKey := cKey + CHR(HB_RandomInt(0,255))
     NEXT
@@ -113,7 +124,7 @@ METHOD DoHttpEvents() CLASS HttpClient
     LOCAL xSendData
     //LOCAL cTemp
 
-    IF ::nTargetWindow == NIL
+    IF ::nTargetWindow == NIL .OR. ::lDisposed == .T.
         RETURN SELF
     ENDIF
 
@@ -156,6 +167,10 @@ METHOD OnMessage(cPayload) CLASS HttpClient
     LOCAL cType, cBody 
     LOCAL nSize
     LOCAL nMinLength := LEN(MSG_PREFIX) + MSG_TYPE_LEN
+
+    IF ::lDisposed == .T.
+        RETURN .F.
+    ENDIF
 
     IF LEN(cPayload) <= nMinLength
         RETURN .F.

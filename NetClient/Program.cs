@@ -6,6 +6,7 @@ using System.Windows.Forms;
 using CommandLine;
 using CommandLine.Text;
 using NetClient.Services;
+using Newtonsoft.Json;
 using NLog;
 using Unity;
 
@@ -56,6 +57,7 @@ namespace NetClient
             var container = new UnityContainer();
             container.RegisterType<WatchableForm, FormDebug>();
             container.RegisterSingleton<MainService>();
+            container.RegisterSingleton<HttpService>();
             container.RegisterInstance(parsed.Value);
             container.Resolve<MainService>().Run();
         }
