@@ -79,10 +79,11 @@ app.post('/users/add', (req, res) => {
         return;
     }
     const { id } = entity;
+
     const index = users.findIndex(x => x.id == id);
-    console.log('index', index);
     if (index >= 0) users[index] = entity;
     else users.push(entity);
+    
     res.send({ entity, id, message: 'Accepted!' });    
 })
 

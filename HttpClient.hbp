@@ -1,31 +1,33 @@
-# Keys when compiling .prg files
+## Keys when compiling .prg files
 -prgflag=-w2 -es1 
 
-# Enable multi/single-thread Harbour VM
+## Enable multi/single-thread Harbour VM
 -mt 
 
-# Incremental-Compile mode
+## Incremental-Compile mode
 -inc
 
-# folder where there will be all * .obj
+## folder where there will be all * .obj
 -workdir=OBJ\BCC
 
-# the name of the EXE module
+## the name of the EXE module
 -oHttpClient
 
-# Debug info: 
-# https://github.com/APerricone/harbourCodeExtension/wiki/Debugger
+## Debug info: 
+## https://github.com/APerricone/harbourCodeExtension/wiki/Debugger
 # -b
 # debug
 
-# list all * .prg
-SendMessage
+## list all * .prg
+HttpClientIncludes
 HttpClientClass
-window
+demo
 
-# project Resources
+## project Resources
 # demo.rc
 
-# paths to the main and extension *.Lib
+## build as library
 # -hblib
+
+## paths to the main and extension *.Lib
 -lminigui

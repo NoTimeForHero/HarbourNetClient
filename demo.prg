@@ -83,7 +83,8 @@ FUNCTION MakeHttpRequest(cAction)
 		hParams["Headers"] = { "Content-Type" => "application/json"}
 		OClient:Request(hParams, @OnListUsers())		
 	ELSEIF cAction == ACTION_ADD_USER
-		xUser := InputBox ( 'Please enter user info with ; delimiters:' , 'User Info' , '11;Adam;Anderson;04.20.1952' )
+		// Encoding: Windows-1251
+		xUser := InputBox ( 'Please enter user info with ; delimiters:' , 'User Info' , '11;Петр;Кузнецов;04.20.1952' )
 		IF xUser == NIL .OR. LEN(xUser) == 0
 			RETURN NIL
 		ENDIF
@@ -117,6 +118,8 @@ FUNCTION OnListUsers(cStatus, hBody)
 		MsgStop("HTTP Request failed!")
 	END
 	cMessage := hBody["Response"]
+	cMessage := HB_JsonDecode(cMessage)
+	cMessage := HB_JsonEncode(cMessage, .T.)
 	MsgInfo(cMessage)
 RETURN NIL
 

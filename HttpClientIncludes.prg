@@ -23,13 +23,24 @@ Return Events ( hWnd, nMsg, wParam, lParam )
 #pragma BEGINDUMP
 
 #include <mgdefs.h>
-#include "hbapi.h"
+#include <hbapi.h>
+#include <shlobj.h>
+#include <time.h>
+#include <windows.h>
 #include "hbwinuni.h"
-#include "windows.h"
 
 #ifndef __XHARBOUR__
    #define ISBYREF( n )          HB_ISBYREF( n )
 #endif
+
+HB_FUNC( TERMINATEPROCESS ) {
+  hb_retni( (BOOL) TerminateProcess( (HANDLE) hb_parni(1),0) );
+}
+
+HB_FUNC( UNIXTIME ) {
+    hb_retnl(time(NULL));
+}
+
 
 HB_FUNC( SENDMESSAGEDATA )
 {

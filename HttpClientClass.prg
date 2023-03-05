@@ -212,20 +212,3 @@ METHOD OnMessage(cPayload) CLASS HttpClient
     ::DoHttpEvents()    
 
 RETURN .T.
-
-#pragma BEGINDUMP
-
-#include <windows.h>
-#include <hbapi.h>
-#include <shlobj.h>
-#include <time.h>
-
-HB_FUNC( TERMINATEPROCESS ) {
-  hb_retni( (BOOL) TerminateProcess( (HANDLE) hb_parni(1),0) );
-}
-
-HB_FUNC( UNIXTIME ) {
-    hb_retnl(time(NULL));
-}
-
-#pragma ENDDUMP
