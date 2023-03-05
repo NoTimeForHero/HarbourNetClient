@@ -9,6 +9,7 @@
 #define MESSAGE_INITIALIZE "INIT"
 #define MESSAGE_RESPONSE "RESP"
 #define MESSAGE_REQUEST "REQT"
+#define MESSAGE_KEEP_ALIVE "LIVE"
 
 #define STATUS_CREATED 1
 #define STATUS_SENDED 2
@@ -22,7 +23,8 @@ CREATE CLASS HttpClient
     VAR nTargetWindow
     VAR hSendingRequest
     VAR hOptions
-    VAR lDisposed
+    VAR lDisposed INIT .F.
+    VAR nLastKeepAlive INIT 1
     METHOD Log(xMessage)
 
     EXPORTED: 
@@ -44,19 +46,19 @@ METHOD New(nOwnerWindow, cPath, hOptions) CLASS HttpClient
     LOCAL oError
     ::nOwnerWindow := nOwnerWindow
     ::hSendingRequest := HASH()
-    ::lDisposed := .F.    
+
 
     hDefaults := HASH()
     hDefaults["Arguments"] := "--hwnd=%HANDLE% --ttl=%TTL%"
-    hDefaults["ClientTTL"] := 60
-    // hDefaults["PingInterval"] := 5
+    hDefaults["ClientTTL"] := 600 // Time before client closes 
+    hDefaults["KeepAliveInterval"] := 300 // KeepAlive interval to prevent close
     hDefaults["Timeout"] := 2
     hDefaults["Debug"] := .T.
 
     IF ValType(hOptions) != 'H'
         hOptions := HASH()
     ENDIF
-    hOptions := HMerge(hOptions, hDefaults)
+    hOptions := HMerge(hDefaults, hOptions)
     ::hOptions := hOptions
 
     ::Log("Created new instance!")
@@ -125,12 +127,18 @@ RETURN SELF
 METHOD DoHttpEvents() CLASS HttpClient
     LOCAL nI, xItem, cData, cKey, aKeys
     LOCAL xTemp
-    LOCAL nCurrentTime
+    LOCAL nCurrentTime := UNIXTIME()
     LOCAL xSendData
     //LOCAL cTemp
 
     IF ::nTargetWindow == NIL .OR. ::lDisposed == .T.
         RETURN SELF
+    ENDIF
+
+    IF nCurrentTime > ::nLastKeepAlive + ::hOptions["KeepAliveInterval"]
+        xSendData := MSG_PREFIX + MESSAGE_KEEP_ALIVE
+        SendMessageData(::nTargetWindow, xSendData)     
+        ::nLastKeepAlive := nCurrentTime        
     ENDIF
 
     cData := "DoHttpEvents: " + CLRF

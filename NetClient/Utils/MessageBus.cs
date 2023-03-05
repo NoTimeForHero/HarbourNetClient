@@ -8,11 +8,16 @@ namespace NetClient
 {
     internal class MessageBus
     {
-        public static readonly Encoding encoding = Encoding.GetEncoding(1251);
+        public readonly Encoding encoding;
         public const string PREFIX = "AV_HTTP";
         public const int TYPE_LEN = 4;
 
-        public static byte[] Serialize(string type, string payload)
+        public MessageBus(ProgramArgs args)
+        {
+            encoding = args.Parsed.Encoding;
+        }
+
+        public byte[] Serialize(string type, string payload)
         {
             if (type.Length != TYPE_LEN) throw new ArgumentException(
                 $"Длина типа сообщения должна быть равна ${TYPE_LEN} символов!", nameof(type));
@@ -23,7 +28,7 @@ namespace NetClient
             return encoding.GetBytes(builder.ToString());
         }
 
-        public static Message Deserialize(byte[] input)
+        public Message Deserialize(byte[] input)
         {
             if (input.Length < PREFIX.Length + TYPE_LEN) return null;
             var stream = input;
@@ -48,6 +53,7 @@ namespace NetClient
             public const string Initialize = "INIT";
             public const string Response = "RESP";
             public const string Request = "REQT";
+            public const string KeepAlive = "LIVE";
         }
     }
 }

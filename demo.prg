@@ -6,6 +6,7 @@
 #include "minigui.ch"
 
 MEMVAR OClient
+MEMVAR ForceClose
 
 #define ACTION_ADD_USER "ADD_USER"
 #define ACTION_LIST_USERS "LIST_USERS"
@@ -15,6 +16,7 @@ MEMVAR OClient
 PROCEDURE Main
 
 	PUBLIC OClient := NIL
+	PUBLIC ForceClose := .F.
 
 	SET EVENTS FUNCTION TO MyEvents
 	SET FONT TO 'Segoe UI', 14
@@ -50,6 +52,12 @@ PROCEDURE Main
 			WIDTH 200 ;
 			HEIGHT 60					
 
+		@ 320,10 BUTTON BUTTON_5 ;
+			CAPTION "ForceClose" ;
+			ACTION { || ForceClose := .T., ReleaseAllWindows() } ;
+			WIDTH 200 ;
+			HEIGHT 60
+
 		DEFINE TIMER oTimerBlink
         	INTERVAL 1000
         	ACTION   { || OClient:DoHttpEvents() }
@@ -63,12 +71,13 @@ PROCEDURE Main
 RETURN
 
 FUNCTION OnInit(nHandle)
-  LOCAL cPath
+  LOCAL cPath, hOptions
   LOCAL cHandle := ALLTRIM(STR(nHandle))
   LOCAL cSelfHandle := ALLTRIM(STR(ThisWindow.Handle))
 
+  hOptions := { "ClientTTL" => 10, "KeepAliveInterval" => 5}
   cPath := GetStartUpFolder() + "\NetClient\bin\Debug\NetClient.exe"
-  OClient := HttpClient():New(nHandle, cPath)
+  OClient := HttpClient():New(nHandle, cPath, hOptions)
 RETURN NIL
 
 FUNCTION MakeHttpRequest(cAction) 
@@ -136,6 +145,9 @@ FUNCTION OnHttpAnswer(cStatus, hBody)
 RETURN NIL
 
 FUNCTION OnRelease
+	IF ForceClose == .T.
+		RETURN NIL
+	ENDIF
 	OClient:Release()
 RETURN NIL
 

@@ -15,6 +15,17 @@ namespace NetClient
         public long TTL { get; set; }
 
         [Option("encoding", HelpText = "Encoding for the messages (default windows-1251)", Default = "windows-1251")]
-        public string encoding { get; set; }
+        public string Encoding { get; set; }
+
+        [Option("debug", HelpText = "Debug mode enabled", Default = false)]
+        public bool Debug { get; set; }
+
+        // TODO: Get more real place for this
+        public ParsedValue Parsed { get; set; } = new ParsedValue();
+
+        public class ParsedValue
+        {
+            public Encoding Encoding { get; set; }
+        }
     }
 }

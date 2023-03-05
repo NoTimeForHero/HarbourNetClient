@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Windows.Forms;
 using CommandLine;
 using CommandLine.Text;
@@ -26,7 +27,7 @@ namespace NetClient
 
                 if (args.Length == 0)
                 {
-                    args = new[] { "--hwnd=0", "--ttl=60" };
+                    args = new[] { "--hwnd=0", "--ttl=30" };
                     logger.Info("Overriding args with debug values: " + string.Join(", ", args));
                 }
 
@@ -50,6 +51,8 @@ namespace NetClient
                 logger.Fatal(message);
                 return;
             }
+            // Lolwut?
+            parsed.Value.Parsed.Encoding = Encoding.GetEncoding(parsed.Value.Encoding ?? "windows-1251");
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);

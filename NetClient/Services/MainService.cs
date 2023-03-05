@@ -16,6 +16,8 @@ namespace NetClient.Services
     internal class MainService
     {
         protected readonly ILogger logger = LogManager.GetCurrentClassLogger();
+        protected readonly KeepAliveService keepAlive;
+        protected readonly MessageBus bus;
         protected readonly ProgramArgs options;
         protected readonly WatchableForm form;
         protected readonly HttpService http;
@@ -25,6 +27,8 @@ namespace NetClient.Services
             form = container.Resolve<WatchableForm>();
             options = container.Resolve<ProgramArgs>();
             http = container.Resolve<HttpService>();
+            bus = container.Resolve<MessageBus>();
+            keepAlive = container.Resolve<KeepAliveService>();
             form.Shown += OnInit;
             form.OnCopyDataMessage += (arg) => Task.Factory.StartNew(() => OnMessage(arg));
         }
@@ -35,20 +39,20 @@ namespace NetClient.Services
             logger.Info("Parent handle: " + options.HostHWND);
 
             var payload = form.Handle.ToString();
-            var message = MessageBus.Serialize(MessageBus.Types.Initialize, payload);
+            var message = bus.Serialize(MessageBus.Types.Initialize, payload);
             Win32.SendDataToWindow(new IntPtr(options.HostHWND), message);
-            if (Debugger.IsAttached) Win32.SendDataToWindow(form.Handle, File.ReadAllBytes("message.txt"));
+            if (options.Debug && Debugger.IsAttached) Win32.SendDataToWindow(form.Handle, File.ReadAllBytes("message.txt"));
         }
 
         protected async Task OnMessage(byte[] raw)
         {
             try
             {
-                logger.Debug($"[SendMessage] Recieved message {raw.Length} bytes!");
-                if (!Debugger.IsAttached) File.WriteAllBytes("message.txt", raw);
-                var message = MessageBus.Deserialize(raw);
+                if (options.Debug) logger.Debug($"[SendMessage] Recieved message {raw.Length} bytes!");
+                if (options.Debug && !Debugger.IsAttached) File.WriteAllBytes("message.txt", raw);
+                var message = bus.Deserialize(raw);
                 if (message == null) return;
-                logger.Info($"Recieved message: {message.Type}");
+                if (options.Debug) logger.Info($"Recieved message: {message.Type}");
                 await OnRecognizedMessage(message);
             }
             catch (Exception ex)
@@ -60,6 +64,9 @@ namespace NetClient.Services
 
         protected async Task OnRecognizedMessage(MessageBus.Message message)
         {
+            // Reset timer on any recognized packet
+            keepAlive.Reset();
+
             switch (message.Type)
             {
                 case MessageBus.Types.Request:
@@ -80,8 +87,11 @@ namespace NetClient.Services
                         response = DataResponse.Error(key, ex);
                     }
 
-                    var payload = MessageBus.Serialize(MessageBus.Types.Response, JsonConvert.SerializeObject(response));
+                    var payload = bus.Serialize(MessageBus.Types.Response, JsonConvert.SerializeObject(response));
                     Win32.SendDataToWindow(new IntPtr(options.HostHWND), payload);
+                    break;
+                case MessageBus.Types.KeepAlive:
+                    if (options.Debug) logger.Trace("Keep Alive Packet!");
                     break;
                 default:
                     logger.Warn("Invalid message type: " + message.Type);
