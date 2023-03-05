@@ -52,7 +52,7 @@ METHOD New(nOwnerWindow, cPath, hOptions) CLASS HttpClient
     hDefaults["Arguments"] := "--hwnd=%HANDLE% --ttl=%TTL%"
     hDefaults["ClientTTL"] := 600 // Time before client closes 
     hDefaults["KeepAliveInterval"] := 300 // KeepAlive interval to prevent close
-    hDefaults["Timeout"] := 2
+    hDefaults["Timeout"] := 10
     hDefaults["Debug"] := .T.
 
     IF ValType(hOptions) != 'H'
@@ -118,8 +118,7 @@ METHOD Request(hParams, xCallback) CLASS HttpClient
     hRecord["Query"] := hParams
     hRecord["Callback"] := xCallback
     hRecord["Status"] := STATUS_CREATED
-    // Old version:
-    //hRecord["ExpiresIn"] := UNIXTIME() + ::hOptions["Timeout"]    
+    hRecord["Timeout"] := IIF(HHasKey(hParams, "Timeout"), hParams["Timeout"], ::hOptions["Timeout"])
     ::hSendingRequest[cKey] := hRecord
     ::DoHttpEvents()
 RETURN SELF
@@ -157,7 +156,7 @@ METHOD DoHttpEvents() CLASS HttpClient
                 xSendData := HB_JsonEncode(xSendData, .T.)
                 xSendData := MSG_PREFIX + MESSAGE_REQUEST + xSendData
                 SendMessageData(::nTargetWindow, xSendData)     
-                xItem["ExpiresTime"] := UNIXTIME() + ::hOptions["Timeout"]                           
+                xItem["ExpiresTime"] := UNIXTIME() + xItem["Timeout"]                       
                 xItem["Status"] := STATUS_SENDED
                 ::Log({"Sending new request: ", xItem})
             CASE xItem["Status"] == STATUS_SENDED

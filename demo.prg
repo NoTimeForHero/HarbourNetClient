@@ -41,7 +41,7 @@ PROCEDURE Main
 			HEIGHT 60		
 
 		@ 80,10 BUTTON BUTTON_3 ;
-			CAPTION "Timeout" ;
+			CAPTION "Slow Request" ;
 			ACTION MakeHttpRequest(ACTION_TIMEOUT) ;
 			WIDTH 200 ;
 			HEIGHT 60				
@@ -75,7 +75,7 @@ FUNCTION OnInit(nHandle)
   LOCAL cHandle := ALLTRIM(STR(nHandle))
   LOCAL cSelfHandle := ALLTRIM(STR(ThisWindow.Handle))
 
-  hOptions := { "ClientTTL" => 10, "KeepAliveInterval" => 5}
+  hOptions := { "ClientTTL" => 10, "KeepAliveInterval" => 5, "Timeout" => 2}
   cPath := GetStartUpFolder() + "\NetClient\bin\Debug\NetClient.exe"
   OClient := HttpClient():New(nHandle, cPath, hOptions)
 RETURN NIL
@@ -117,6 +117,7 @@ FUNCTION MakeHttpRequest(cAction)
 		hParams["Url"] = "http://localhost:3000/timeout"
 		hParams["Method"] = "GET"
 		hParams["Headers"] = { "Content-Type" => "application/json"}
+		hParams["Timeout"] = 20
 		OClient:Request(hParams, @OnHttpAnswer())				
 	ENDIF
 RETURN NIL
