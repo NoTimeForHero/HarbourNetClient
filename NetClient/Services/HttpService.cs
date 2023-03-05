@@ -31,28 +31,30 @@ namespace NetClient.Services
             logger.Info($"HTTP Request: {query.Method} {query.Url}");
 
             var request = new HttpRequestMessage(new HttpMethod(query.Method), query.Url);
+            string contentType = "text/plain";
 
 
-            if (query.Body != null) request.Content = new StringContent(query.Body);
             if (query.Headers != null)
             {
                 logger.Debug("Headers: ");
                 foreach (var pair in query.Headers)
                 {
                     logger.Debug($"{pair.Key}: {pair.Value}");
-                    // Protection from headers like "Content-Type":
-                    //  https://stackoverflow.com/questions/10679214/how-do-you-set-the-content-type-header-for-an-httpclient-request
-                    request.Headers.TryAddWithoutValidation(pair.Key, pair.Value);
+                    if (pair.Key.ToLower() == "content-type")
+                    {
+                        contentType = pair.Value.Split(';')[0];
+                    }
+                    else
+                    {
+                        // Protection from headers like "Content-Type":
+                        //  https://stackoverflow.com/questions/10679214/how-do-you-set-the-content-type-header-for-an-httpclient-request
+                        request.Headers.TryAddWithoutValidation(pair.Key, pair.Value);
+                    }
                 }
             }
+            if (query.Body != null) request.Content = new StringContent(JsonConvert.SerializeObject(query.Body), Encoding.UTF8, contentType);
 
             var watcher = Stopwatch.StartNew();
-
-            // TODO: Debug only
-            DebugCounter++;
-            if (DebugCounter == 1) throw new NotImplementedException("Under construction!");
-            if (DebugCounter == 2) await Task.Delay(4000);
-
             var response = await client.SendAsync(request);
             var responseHeaders = response.Headers
                 .ToDictionary(x => x.Key, x => string.Join(";", x.Value));

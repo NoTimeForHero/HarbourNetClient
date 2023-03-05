@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace NetClient.Data
 {
@@ -26,8 +27,9 @@ namespace NetClient.Data
             [JsonProperty(Required = Required.Default)]
             public Dictionary<string, string> Headers { get; set; }
 
+            // TODO: Support for Non-JSON body!
             [JsonProperty(Required = Required.Default)]
-            public string Body { get; set; }
+            public JObject Body { get; set; }
         }
     }
 }

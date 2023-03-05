@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -36,7 +37,7 @@ namespace NetClient.Services
             var payload = form.Handle.ToString();
             var message = MessageBus.Serialize(MessageBus.Types.Initialize, payload);
             Win32.SendDataToWindow(new IntPtr(options.HostHWND), message);
-            // Win32.SendDataToWindow(form.Handle, File.ReadAllBytes("message.txt"));
+            if (Debugger.IsAttached) Win32.SendDataToWindow(form.Handle, File.ReadAllBytes("message.txt"));
         }
 
         protected async Task OnMessage(byte[] raw)
@@ -44,7 +45,7 @@ namespace NetClient.Services
             try
             {
                 logger.Debug($"[SendMessage] Recieved message {raw.Length} bytes!");
-                // File.WriteAllBytes("message.txt", raw);
+                if (!Debugger.IsAttached) File.WriteAllBytes("message.txt", raw);
                 var message = MessageBus.Deserialize(raw);
                 if (message == null) return;
                 logger.Info($"Recieved message: {message.Type}");
