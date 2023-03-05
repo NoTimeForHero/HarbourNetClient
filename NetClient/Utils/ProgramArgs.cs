@@ -13,5 +13,8 @@ namespace NetClient
 
         [Option("ttl", HelpText = "TTL before application closes when no messages from the host", Required = true)]
         public long TTL { get; set; }
+
+        [Option("encoding", HelpText = "Encoding for the messages (default windows-1251)", Default = "windows-1251")]
+        public string encoding { get; set; }
     }
 }

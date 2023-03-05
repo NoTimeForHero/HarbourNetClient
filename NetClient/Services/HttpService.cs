@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using NetClient.Data;
+using Newtonsoft.Json;
 using NLog;
 
 namespace NetClient.Services
@@ -13,13 +15,15 @@ namespace NetClient.Services
     {
         protected readonly ILogger logger = LogManager.GetCurrentClassLogger();
         protected readonly HttpClient client;
+        protected readonly ProgramArgs options;
 
-        public HttpService()
+        public HttpService(ProgramArgs options)
         {
             client = new HttpClient();
+            this.options = options;
         }
 
-        public async Task SendRequest(DataRequest input)
+        public async Task<DataResponse.Http> SendRequest(DataRequest input)
         {
             var query = input.Query;
             logger.Info($"HTTP Request: {query.Method} {query.Url}");
@@ -40,9 +44,26 @@ namespace NetClient.Services
                 }
             }
 
+            var watcher = Stopwatch.StartNew();
             var response = await client.SendAsync(request);
-            var body = await response.Content.ReadAsByteArrayAsync();
-            logger.Info($"Response {response.StatusCode} with {body.Length} bytes length!");
+            var responseHeaders = response.Headers
+                .ToDictionary(x => x.Key, x => string.Join(";", x.Value));
+            var body = await response.Content.ReadAsStringAsync();
+            watcher.Stop();
+
+
+            var elapsed = (int)watcher.Elapsed.TotalMilliseconds;
+            logger.Info($"Response {(int)response.StatusCode} {response.StatusCode} in {elapsed} ms with {body.Length} bytes length!");
+
+            var result = new DataResponse.Http
+            {
+                Success = (int)response.StatusCode >= 200 && (int)response.StatusCode <= 299,
+                Headers = responseHeaders,
+                LoadingTimeMs = elapsed,
+                StatusCode = (int)response.StatusCode,
+                Response = body
+            };
+            return result;
         }
     }
 }

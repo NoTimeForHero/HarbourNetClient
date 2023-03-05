@@ -44,7 +44,7 @@ namespace NetClient.Services
             try
             {
                 logger.Debug($"[SendMessage] Recieved message {raw.Length} bytes!");
-                //File.WriteAllBytes("message.txt", raw);
+                // File.WriteAllBytes("message.txt", raw);
                 var message = MessageBus.Deserialize(raw);
                 if (message == null) return;
                 logger.Info($"Recieved message: {message.Type}");
@@ -64,9 +64,21 @@ namespace NetClient.Services
                 case MessageBus.Types.Request:
                     var request = JsonConvert.DeserializeObject<DataRequest>(message.Payload);
                     if (request == null) throw new NullReferenceException("Message deserialization failed!");
-                    logger.Info("Get new request with key: " + request.Key);
-                    await http.SendRequest(request);
+                    var key = request.Key;
+                    logger.Info("Get new request with key: " + key);
+                    DataResponse response;
+                    try
+                    {
+                        var res = await http.SendRequest(request);
+                        response = DataResponse.Complete(key, res);
+                    }
+                    catch (Exception ex)
+                    {
+                        response = DataResponse.Error(key, ex);
+                    }
 
+                    var payload = MessageBus.Serialize(MessageBus.Types.Response, JsonConvert.SerializeObject(response));
+                    Win32.SendDataToWindow(new IntPtr(options.HostHWND), payload);
                     break;
                 default:
                     logger.Warn("Invalid message type: " + message.Type);

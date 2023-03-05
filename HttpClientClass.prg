@@ -14,6 +14,9 @@
 #define STATUS_SENDED 2
 #define STATUS_COMPLETED 3
 
+#define HTTP_RESPONSE_TYPE__ERROR 1
+#define HTTP_RESPONSE_TYPE__SUCCESS 2
+
 CREATE CLASS HttpClient
 
     PROTECTED:
@@ -155,7 +158,8 @@ METHOD DoHttpEvents() CLASS HttpClient
                 ENDIF
             CASE xItem["Status"] == STATUS_COMPLETED
                 HDel(::hSendingRequest, cKey)                
-                ::Log({"Request completed: ", cKey})                
+                ::Log({"Request completed: ", cKey})
+                ::Log(xItem["Response"])
         ENDCASE
 
         cData := cData + cKey + ": " + HB_JsonEncode(xItem) + CLRF
@@ -164,7 +168,7 @@ RETURN SELF
 
 METHOD OnMessage(cPayload) CLASS HttpClient
 
-    LOCAL cType, cBody 
+    LOCAL cType, cBody, cKey
     LOCAL nSize
     LOCAL nMinLength := LEN(MSG_PREFIX) + MSG_TYPE_LEN
 
@@ -191,7 +195,12 @@ METHOD OnMessage(cPayload) CLASS HttpClient
        ::nTargetWindow = VAL(cBody)
        ::Log("Initialized with child HWND: " + cBody)
     case cType == MESSAGE_RESPONSE
-        ::Log("Response?")
+       cBody := hb_jsonDecode(cBody)
+       cKey := cBody["Key"]
+       IF HHasKey(::hSendingRequest, cKey)
+        ::hSendingRequest[cKey]["Status"] = STATUS_COMPLETED
+        ::hSendingRequest[cKey]["Response"] = cBody
+       ENDIF
     endcase
     ::DoHttpEvents()    
 

@@ -1,8 +1,10 @@
-*.log
 OBJ
+node_modules
 *.exe
 *.obj
 *.tds
+*.log
 ErrorLog.htm
 checkstatic.txt
 _MsgLog.txt
+message.txt
