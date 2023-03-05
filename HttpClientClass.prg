@@ -14,9 +14,6 @@
 #define STATUS_SENDED 2
 #define STATUS_COMPLETED 3
 
-#define HTTP_RESPONSE_TYPE__ERROR 1
-#define HTTP_RESPONSE_TYPE__SUCCESS 2
-
 CREATE CLASS HttpClient
 
     PROTECTED:
@@ -34,6 +31,9 @@ CREATE CLASS HttpClient
     METHOD DoHttpEvents()
     METHOD Request(hParams, xCallback)
     METHOD Release()     
+    DATA STATUS_SUCESS INIT "Success" READONLY
+    DATA STATUS_ERROR INIT "Error" READONLY
+    DATA STATUS_TIMEOUT INIT "Timeout" READONLY
 
 ENDCLASS
 
@@ -49,7 +49,8 @@ METHOD New(nOwnerWindow, cPath, hOptions) CLASS HttpClient
     hDefaults := HASH()
     hDefaults["Arguments"] := "--hwnd=%HANDLE% --ttl=%TTL%"
     hDefaults["ClientTTL"] := 60
-    hDefaults["Timeout"] := 5
+    // hDefaults["PingInterval"] := 5
+    hDefaults["Timeout"] := 2
     hDefaults["Debug"] := .T.
 
     IF ValType(hOptions) != 'H'
@@ -123,6 +124,7 @@ RETURN SELF
 
 METHOD DoHttpEvents() CLASS HttpClient
     LOCAL nI, xItem, cData, cKey, aKeys
+    LOCAL xTemp
     LOCAL nCurrentTime
     LOCAL xSendData
     //LOCAL cTemp
@@ -154,12 +156,17 @@ METHOD DoHttpEvents() CLASS HttpClient
                 nCurrentTime := UNIXTIME()
                 IF nCurrentTime > xItem["ExpiresTime"]
                     HDel(::hSendingRequest, cKey)                    
-                    ::Log({"Request expired: ", cKey})
+                    ::Log({"Request expired: ", cKey})                                        
+
+                    xTemp := {"Message" => "No answer recieved in SendMessage in specific timeout!"}
+                    Do(xItem["Callback"], ::STATUS_TIMEOUT, xTemp)
                 ENDIF
             CASE xItem["Status"] == STATUS_COMPLETED
                 HDel(::hSendingRequest, cKey)                
-                ::Log({"Request completed: ", cKey})
+                ::Log({"Request completed: ", cKey})                
                 ::Log(xItem["Response"])
+
+                Do(xItem["Callback"], xItem["Response"]["Type"], xItem["Response"]["Data"])
         ENDCASE
 
         cData := cData + cKey + ": " + HB_JsonEncode(xItem) + CLRF

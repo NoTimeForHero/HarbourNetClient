@@ -49,13 +49,26 @@ FUNCTION OnInit(nHandle)
 RETURN NIL
 
 FUNCTION MakeTestRequest() 
-	LOCAL xSuccess := {|xResult| MsgInfo(HB_JsonEncode(xResult, .T.)) }
+	LOCAL xCallback := {|cCode, hResponse| MsgInfo(HB_JsonEncode({cCode, hResponse}, .T.)) }
 	LOCAL hParams := HASH()
 	hParams["Url"] = "https://jsonplaceholder.typicode.com/users"
 	hParams["Method"] = "GET"
 	hParams["Headers"] = { "Content-Type" => "application/json"}
 	//hParams["Body"] = '{"key": "value"}'
-	OClient:Request(hParams, xSuccess)
+	//OClient:Request(hParams, xCallback)
+	OClient:Request(hParams, @GetTestResponse())
+RETURN NIL
+
+FUNCTION GetTestResponse(cStatus, hBody)
+	IF cStatus == OClient:STATUS_ERROR
+		MsgStop(HB_JsonEncode({hBody}, .T.))
+	ELSEIF cStatus == OClient:STATUS_TIMEOUT
+		MsgExclamation("Timeout!")
+	ELSEIF cStatus == OClient:STATUS_SUCESS
+		MsgInfo(HB_JsonEncode({hBody}, .T.))
+	ELSE
+		MsgStop("Invalid status: " + cStatus)
+	ENDIF
 RETURN NIL
 
 FUNCTION OnRelease

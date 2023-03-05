@@ -23,6 +23,8 @@ namespace NetClient.Services
             this.options = options;
         }
 
+        public static int DebugCounter = 0;
+
         public async Task<DataResponse.Http> SendRequest(DataRequest input)
         {
             var query = input.Query;
@@ -45,6 +47,12 @@ namespace NetClient.Services
             }
 
             var watcher = Stopwatch.StartNew();
+
+            // TODO: Debug only
+            DebugCounter++;
+            if (DebugCounter == 1) throw new NotImplementedException("Under construction!");
+            if (DebugCounter == 2) await Task.Delay(4000);
+
             var response = await client.SendAsync(request);
             var responseHeaders = response.Headers
                 .ToDictionary(x => x.Key, x => string.Join(";", x.Value));

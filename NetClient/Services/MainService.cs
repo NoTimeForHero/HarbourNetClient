@@ -36,7 +36,7 @@ namespace NetClient.Services
             var payload = form.Handle.ToString();
             var message = MessageBus.Serialize(MessageBus.Types.Initialize, payload);
             Win32.SendDataToWindow(new IntPtr(options.HostHWND), message);
-            Win32.SendDataToWindow(form.Handle, File.ReadAllBytes("message.txt"));
+            // Win32.SendDataToWindow(form.Handle, File.ReadAllBytes("message.txt"));
         }
 
         protected async Task OnMessage(byte[] raw)
@@ -74,6 +74,8 @@ namespace NetClient.Services
                     }
                     catch (Exception ex)
                     {
+                        logger.Info("Request failed: " + ex.GetType().FullName + ": " + ex.Message);
+                        logger.Debug(ex);
                         response = DataResponse.Error(key, ex);
                     }
 
