@@ -6,13 +6,17 @@ STATIC aCats
 
 #define ACTION_LOAD 'LOAD'
 #define ACTION_SELECTED 'SELECTED'
-#define ACTION_UPLOAD "ADD_USER"
-#define ACTION_REFRESH "LIST_USERS"
+#define ACTION_ADD 'ADD'
+#define ACTION_REMOVE "REMOVE"
  
 #define CLRF CHR(10) + CHR(13)
 #define WM_COPYDATA 74
 
 #define URL_PREFIX "http://localhost:3000"
+
+#define FO_READ 0
+#define FS_SET 0
+#define FS_END 2
  
  PROCEDURE Demo2()
  
@@ -39,6 +43,18 @@ STATIC aCats
          END LISTBOX
 
          @ 10, 310 IMAGE ImgCat PICTURE "" WIDTH 300 HEIGHT 300
+
+         @ 350,320 BUTTON BUTTON_1 ;
+			CAPTION "Add/Edit" ;
+			ACTION RunRequest(ACTION_ADD) ;
+			WIDTH 180 ;
+			HEIGHT 40
+         
+         @ 350,510 BUTTON BUTTON_2 ;
+			CAPTION "Remove" ;
+			ACTION RunRequest(ACTION_REMOVE, Win_2.ListBoxCats.Value) ;
+			WIDTH 180 ;
+			HEIGHT 40         
  
          DEFINE TIMER oTimerBlink
              INTERVAL 1000
@@ -65,17 +81,80 @@ STATIC aCats
 
  STATIC FUNCTION RunRequest(cAction, xDetails)
     LOCAL hParams := HASH()
+
     IF cAction == ACTION_LOAD
 		hParams["Url"] = URL_PREFIX + "/cats"
 		hParams["Method"] = "GET"
 		OClient2:Request(hParams, @OnCatsLoaded())		
     ELSEIF cAction == ACTION_SELECTED
+        IF xDetails < 1
+            RETURN NIL
+        ENDIF
 		hParams["Url"] = URL_PREFIX + aCats[xDetails]["image"]
 		hParams["Method"] = "GET"        
         hParams["BinaryResponse"] = .T.
 		OClient2:Request(hParams, @OnDownloadImage())		        
+    ELSEIF cAction == ACTION_REMOVE
+		hParams["Url"] = URL_PREFIX + "/cats/" + ALLTRIM(STR(aCats[xDetails]["id"]))
+		hParams["Method"] = "DELETE"
+        OClient2:Request(hParams, @OnItemRemoved())		        
+    ELSEIF cAction == ACTION_ADD
+        AddFile(hParams)
+        OClient2:Request(hParams, @OnFileAdded())		  
     ENDIF    
  RETURN NIL 
+
+ STATIC FUNCTION AddFile(hParams)
+    LOCAL cFile, cName
+    LOCAL cStream, nFileSize, nHandle
+    LOCAL cDefaultName := 'Oliver'
+    IF Win_2.ListBoxCats.Value > 0
+       cDefaultName := aCats[Win_2.ListBoxCats.Value]["name"]
+    ENDIF
+    cName := InputBox ( 'Please enter a your cat name' , 'Cat Name' , cDefaultName )
+    IF LEN(cName) < 1
+        RETURN NIL
+    ENDIF
+    cFile := GetFile({{'JPEG', '*.jpg'}, {'PNG', '*.png'}, {'All files', '*.*'}}, 'Open a cat picture', , , .T.)
+    IF LEN(cFile) < 1
+        RETURN NIL
+    ENDIF
+    nHandle := FOpen(cFile, FO_READ)
+    IF FError() <> 0
+        MsgStop("File open failed!")
+        RETURN NIL
+    ENDIF
+    nFileSize := FSeek( nHandle, 0, FS_END )
+    cStream := Space(nFileSize)
+    FSeek(nHandle, 0, FS_SET)
+    FRead(nHandle, @cStream, nFileSize)
+    FClose(nHandle)    
+    hParams["Url"] = URL_PREFIX + "/cats/upload?test=23"
+    hParams["Query"] =  { "name" => cName }
+    hParams["Method"] = "POST"
+    hParams["BinaryRequest"] = .T.
+    hParams["Body"] = cStream
+ RETURN NIL    
+
+ STATIC FUNCTION OnFileAdded(cStatus, cResponse, hDetails) 
+    IF cStatus != OClient2:STATUS_SUCESS
+		MsgDebug({cStatus, cResponse, hDetails})
+		RETURN NIL
+	END
+    RunRequest(ACTION_LOAD)  
+    IF Win_2.ListBoxCats.Value > 0
+        RunRequest(ACTION_SELECTED, Win_2.ListBoxCats.Value)
+    ENDIF
+ RETURN NIL
+
+ STATIC FUNCTION OnItemRemoved(cStatus, cResponse)
+    IF cStatus != OClient2:STATUS_SUCESS
+		MsgStop("HTTP Request failed!")
+		RETURN NIL
+	END
+    RunRequest(ACTION_LOAD)    
+    MsgInfo(cResponse)
+ RETURN NIL
 
  STATIC FUNCTION OnDownloadImage(cStatus, cResponse)
     LOCAL cPath

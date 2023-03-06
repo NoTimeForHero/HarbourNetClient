@@ -1,5 +1,5 @@
 const express = require('express')
-const { wait } = require('./utils');
+const { wait, rawParser } = require('./utils');
 const app = express()
 const port = 3000
 
@@ -10,6 +10,8 @@ const modules = [
 
 const main = async() => {
 
+
+    app.use(rawParser);
     app.use(express.json());
 
     app.get('/', (req, res) => {

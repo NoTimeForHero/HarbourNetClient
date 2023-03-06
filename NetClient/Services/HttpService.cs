@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
+using System.Web;
 using NetClient.Data;
 using Newtonsoft.Json;
 using NLog;
@@ -26,12 +27,17 @@ namespace NetClient.Services
 
         public static int DebugCounter = 0;
 
+        private void ReplaceUri() {}
+
         public async Task<Response> SendRequest(DataRequest input, byte[] requestBody)
         {
             var query = input.Query;
             logger.Info($"HTTP Request: {query.Method} {query.Url}");
 
-            var request = new HttpRequestMessage(new HttpMethod(query.Method), query.Url);
+            var uri = new Uri(query.Url);
+            if (query.Query != null) uri = Utils.MergeURI(uri, query.Query);
+
+            var request = new HttpRequestMessage(new HttpMethod(query.Method), uri);
             string contentType = "text/plain";
 
 
@@ -56,7 +62,10 @@ namespace NetClient.Services
 
             if (requestBody != null && requestBody.Length > 0)
             {
-                if (query.RequestBodyBinary) throw new NotImplementedException("Binary body is not supported yet!");
+                if (query.BinaryRequest)
+                {
+                    request.Content = new ByteArrayContent(requestBody);
+                }
                 else
                 {
                     var content = requestBody.ToString(options.Parsed.Encoding);
@@ -97,6 +106,20 @@ namespace NetClient.Services
         {
             public Dictionary<string, object> Details { get; set; }
             public byte[] Body { get; set; }
+        }
+
+        private class Utils
+        {
+            public static Uri MergeURI(Uri inputUri, Dictionary<string, string> queryParams)
+            {
+                var utility = HttpUtility.ParseQueryString(inputUri.Query);
+                foreach (var pair in queryParams) utility.Set(pair.Key, pair.Value);
+                var newQuery = utility.ToString();
+
+                var urlBuilder = new UriBuilder(inputUri);
+                urlBuilder.Query = newQuery;
+                return urlBuilder.Uri;
+            }
         }
     }
 }

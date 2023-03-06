@@ -43,15 +43,57 @@ module.exports = async(app) => {
         res.send(info);
     });
 
+    app.post('/cats/upload', (req, res) => {
+        const { name } = req.query;
+        if (!name) {
+            res.statusCode = 400;
+            res.send("Missing cat name!");
+        }
+
+        const cat = cats.find(x => x.name === name);
+        const id = cat?.id ? cat.id : Math.max(...cats.map(x => x.id)) + 1;
+        if (!cat) cats.push({ id, name });
+
+        memoryCats[id] = req.rawBody;        
+
+        const target = path.join(tempDir, `lastCat.jpg`);
+        fs.writeFileSync(target, req.rawBody);
+
+        const message = cat
+            ? `Updating picture for cat: ${id} - ${name}`
+            : `Adding new cat: ${id} - ${name}`;        
+        res.send(message);
+    });
+
     app.get('/cats/:cat/photo', (req, res) => {
         const { cat } = req.params; 
         const target = path.join(tempDir, `${cat}.jpg`);
-        if (!fs.existsSync(target)) {
-            res.statusCode = 404;
-            res.send("Cat not found :(");
+        if (cat in memoryCats) {
+            res.set('Content-Type', 'image/png');
+            res.send(memoryCats[cat]);
             return;
         }
-        res.sendFile(target);
+        if (fs.existsSync(target)) {
+            res.sendFile(target);
+            return;
+        }
+        res.statusCode = 404;
+        res.send("Cat not found :(");
+    });
+
+    app.delete('/cats/:cat', (req, res) => {
+        const id = req.params.cat;
+        const index = cats.findIndex(x => x.id == id);
+        if (index < 0) {
+            res.statusCode = 404;
+            console.log(`Cat not found: ${id} -> ${index}`);
+            res.send('Cat not found! :)');
+            return;
+        }
+        const removed = cats[index];
+        cats.splice(index, 1);
+        console.log(`Cat "${removed.name}" removed :(`);
+        res.send(`Cat "${removed.name}" removed :(`);
     });
 
 }
