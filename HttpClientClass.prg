@@ -245,9 +245,9 @@ STATIC FUNCTION EncodePacket(cType, cMessage, cBinary)
 RETURN cResult
 
 STATIC FUNCTION DecodePacket(cPayload)
-    LOCAL cPrefix, cType, cBody
+    LOCAL cPrefix, cType, cBody, cBinary
     LOCAL nMinLength := LEN(MSG_PREFIX) + MSG_TYPE_LEN    
-    LOCAL nOffset := 1
+    LOCAL nBodyLen, nOffset := 1, nLeft
     
     IF LEN(cPayload) <= nMinLength
         RETURN NIL
@@ -262,7 +262,14 @@ STATIC FUNCTION DecodePacket(cPayload)
     
     cType := SUBSTR(cPayload, nOffset, MSG_TYPE_LEN)
     nOffset := nOffset + MSG_TYPE_LEN
+
+    nBodyLen := Bin2L(SUBSTR(cPayload, nOffset, INT_LEN))
+    nOffset := nOffset + INT_LEN
+
+    cBody := SUBSTR(cPayload, nOffset, nBodyLen)
+    nOffset := nOffset + nBodyLen
+
+    nLeft := LEN(cPayload) - nOffset + 1
+    cBinary := SUBSTR(cPayload, nOffset, nLeft)
     
-    cBody := SUBSTR(cPayload, nOffset, LEN(cPayload) - nOffset + 1)
-    
-RETURN { cType, cBody }
+RETURN { cType, cBody, cBinary }

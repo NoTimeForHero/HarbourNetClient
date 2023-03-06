@@ -27,7 +27,8 @@ namespace NetClient.Data
             [JsonProperty(Required = Required.Default)]
             public Dictionary<string, string> Headers { get; set; }
 
-            public bool BodyBinary { get; set; } = false;
+            public bool RequestBodyBinary { get; set; } = false;
+            public bool ResponseBodyBinary { get; set; } = false;
         }
     }
 }

@@ -55,7 +55,7 @@ namespace NetClient.Services
 
             if (requestBody != null && requestBody.Length > 0)
             {
-                if (query.BodyBinary) throw new NotImplementedException("Binary body is not supported yet!");
+                if (query.RequestBodyBinary) throw new NotImplementedException("Binary body is not supported yet!");
                 else
                 {
                     var content = requestBody.ToString(options.Parsed.Encoding);
@@ -70,6 +70,7 @@ namespace NetClient.Services
             var body = await response.Content.ReadAsStringAsync();
             watcher.Stop();
 
+            if (query.ResponseBodyBinary) throw new NotImplementedException("Binary body is not supported yet!");
 
             var elapsed = (int)watcher.Elapsed.TotalMilliseconds;
             logger.Info($"Response {(int)response.StatusCode} {response.StatusCode} in {elapsed} ms with {body.Length} bytes length!");

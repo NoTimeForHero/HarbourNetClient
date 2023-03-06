@@ -11,11 +11,13 @@ namespace NetClient.Utils
     {
         private readonly int maxLength;
         private readonly MemoryStream stream;
+        private readonly Encoding encoding;
 
-        public ByteArrayReader(byte[] input)
+        public ByteArrayReader(byte[] input, Encoding encoding)
         {
             maxLength = input.Length;
             stream = new MemoryStream(input);
+            this.encoding = encoding;
         }
 
         private byte[] Slice(int length)
@@ -29,7 +31,7 @@ namespace NetClient.Utils
         public int ReadInteger()
             => BitConverter.ToInt32(Slice(4), 0);
 
-        public string ReadString(int length, Encoding encoding)
+        public string ReadString(int length)
             => encoding.GetString(Slice(length));
 
         public byte[] Read(int length) => Slice(length);

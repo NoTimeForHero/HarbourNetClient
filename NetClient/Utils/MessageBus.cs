@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -18,28 +19,32 @@ namespace NetClient
             encoding = args.Parsed.Encoding;
         }
 
-        public byte[] Serialize(string type, string payload)
+        public byte[] Serialize(string type, string payload, byte[] binary = null)
         {
             if (type.Length != TYPE_LEN) throw new ArgumentException(
                 $"Длина типа сообщения должна быть равна ${TYPE_LEN} символов!", nameof(type));
-            var builder = new StringBuilder(PREFIX.Length + TYPE_LEN + payload.Length);
-            builder.Append(PREFIX);
-            builder.Append(type);
-            builder.Append(payload);
-            return encoding.GetBytes(builder.ToString());
+            using (var writer = new ByteArrayWriter(encoding))
+            {
+                writer.WriteString(PREFIX);
+                writer.WriteString(type);
+                writer.WriteInt(payload.Length);
+                writer.WriteString(payload);
+                writer.Write(binary ?? Array.Empty<byte>());
+                return writer.ToArray();
+            }
         }
 
         public Message Deserialize(byte[] input)
         {
             if (input.Length < PREFIX.Length + TYPE_LEN) return null;
-            using (var reader = new ByteArrayReader(input))
+            using (var reader = new ByteArrayReader(input, encoding))
             {
-                var prefix = reader.ReadString(PREFIX.Length, encoding);
+                var prefix = reader.ReadString(PREFIX.Length);
                 if (prefix != PREFIX) return null;
 
-                var type = reader.ReadString(TYPE_LEN, encoding);
+                var type = reader.ReadString(TYPE_LEN);
                 var payloadSize = reader.ReadInteger();
-                var payload = reader.ReadString(payloadSize, encoding);
+                var payload = reader.ReadString(payloadSize);
                 var binary = reader.ReadToEnd();
 
                 return new Message
