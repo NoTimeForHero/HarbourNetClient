@@ -11,11 +11,13 @@ MEMVAR ForceClose
 #define ACTION_ADD_USER "ADD_USER"
 #define ACTION_LIST_USERS "LIST_USERS"
 #define ACTION_NOT_FOUND "404_NOT_FOUND"
+#define ACTION_LONG_TIME "LONG_TIME"
 #define ACTION_TIMEOUT "TIMEOUT"
+#define ACTION_ERROR "ERROR"
 
 #define CLRF CHR(10) + CHR(13)
 
-PROCEDURE Main
+PROCEDURE Demo1()
 
 	PUBLIC OClient := NIL
 	PUBLIC ForceClose := .F.
@@ -44,17 +46,35 @@ PROCEDURE Main
 
 		@ 80,10 BUTTON BUTTON_3 ;
 			CAPTION "Slow Request" ;
+			ACTION MakeHttpRequest(ACTION_LONG_TIME) ;
+			WIDTH 160 ;
+			HEIGHT 40		
+		
+		@ 80,180 BUTTON BUTTON_4 ;
+			CAPTION "Timeout" ;
 			ACTION MakeHttpRequest(ACTION_TIMEOUT) ;
-			WIDTH 200 ;
-			HEIGHT 60				
+			WIDTH 160 ;
+			HEIGHT 40					
 
-		@ 80,220 BUTTON BUTTON_4 ;
+		@ 80,350 BUTTON BUTTON_5 ;
 			CAPTION "404 Not Found" ;
 			ACTION MakeHttpRequest(ACTION_NOT_FOUND) ;
-			WIDTH 200 ;
+			WIDTH 160 ;
+			HEIGHT 40			
+		
+		@ 80,520 BUTTON BUTTON_6 ;
+			CAPTION "C# Error" ;
+			ACTION MakeHttpRequest(ACTION_ERROR) ;
+			WIDTH 160 ;
+			HEIGHT 40				
+		
+		@ 140,10 BUTTON BUTTON_7 ;
+			CAPTION "Get Image Info" ;
+			ACTION MakeHttpRequest(ACTION_ERROR) ;
+			WIDTH 240 ;
 			HEIGHT 60					
 
-		@ 320,10 BUTTON BUTTON_5 ;
+		@ 320,10 BUTTON BUTTON_99 ;
 			CAPTION "ForceClose" ;
 			ACTION { || ForceClose := .T., ReleaseAllWindows() } ;
 			WIDTH 200 ;
@@ -97,12 +117,22 @@ FUNCTION MakeHttpRequest(cAction)
 	ELSEIF cAction == ACTION_NOT_FOUND
 		hParams["Url"] = "http://localhost:3000/not_found"
 		hParams["Method"] = "GET"
-		OClient:Request(hParams, @OnHttpAnswer())				
+		OClient:Request(hParams, @OnHttpAnswer())	
 	ELSEIF cAction == ACTION_TIMEOUT
 		hParams["Url"] = "http://localhost:3000/timeout"
 		hParams["Method"] = "GET"
+		hParams["Timeout"] = 2
+		OClient:Request(hParams, @OnHttpAnswer())						
+	ELSEIF cAction == ACTION_LONG_TIME
+		hParams["Url"] = "http://localhost:3000/timeout"
+		hParams["Method"] = "GET"
 		hParams["Timeout"] = 20
-		OClient:Request(hParams, @OnHttpAnswer())				
+		OClient:Request(hParams, @OnHttpAnswer())		
+	ELSEIF cAction == ACTION_ERROR
+		hParams["Url"] = "2dr32asdasd"
+		hParams["Method"] = "APPLE"
+		hParams["Timeout"] = 20
+		OClient:Request(hParams, @OnHttpAnswer())		
 	ELSEIF cAction == ACTION_ADD_USER
 		// Encoding: Windows-1251
 		xUser := InputBox ( 'Please enter user info with ; delimiters:' , 'User Info' , '11;Петр;Кузнецов;04.20.1952' )

@@ -1,5 +1,6 @@
 OBJ
 node_modules
+temp
 *.exe
 *.obj
 *.tds
