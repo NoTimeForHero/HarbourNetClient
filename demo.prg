@@ -6,8 +6,8 @@
 #include "minigui.ch"
 
 MEMVAR OClient
-MEMVAR hInstance
 MEMVAR ForceClose
+STATIC hInstance
 
 #define ACTION_ADD_USER "ADD_USER"
 #define ACTION_LIST_USERS "LIST_USERS"
@@ -194,6 +194,7 @@ STATIC FUNCTION OnRelease
 RETURN NIL
 
 FUNCTION Win1_OnWmCopyData(nHandle, cData)
+   ? "Win_1", nHandle, hInstance, IIF(nHandle == hInstance, "CORRECT", "MISS"), cData
    IF nHandle != hInstance
 		RETURN NIL
    ENDIF	

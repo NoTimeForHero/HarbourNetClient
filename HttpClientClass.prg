@@ -25,6 +25,8 @@ CREATE CLASS HttpClient
     VAR hOptions
     VAR lDisposed INIT .F.
     VAR nLastKeepAlive INIT 1
+    VAR nInstanceId
+    CLASS VAR nInstanceCounter INIT 0
     METHOD Log(xMessage)
 
     EXPORTED: 
@@ -33,8 +35,8 @@ CREATE CLASS HttpClient
     METHOD DoHttpEvents()
     METHOD Request(hParams, xCallback)
     METHOD Release()     
-    DATA STATUS_SUCESS INIT "Success" READONLY
-    DATA STATUS_ERROR INIT "Error" READONLY
+        DATA STATUS_SUCESS INIT "Success" READONLY
+        DATA STATUS_ERROR INIT "Error" READONLY
     DATA STATUS_TIMEOUT INIT "Timeout" READONLY
 
 ENDCLASS
@@ -47,6 +49,9 @@ METHOD New(nOwnerWindow, cPath, hOptions) CLASS HttpClient
     ::nOwnerWindow := nOwnerWindow
     ::hSendingRequest := HASH()
     ::nLastKeepAlive := UNIXTIME()
+
+    ::nInstanceCounter++
+    ::nInstanceId := ::nInstanceCounter
 
     hDefaults := HASH()
     hDefaults["Arguments"] := "--hwnd=%HANDLE% --ttl=%TTL%"
@@ -84,7 +89,7 @@ METHOD Log(xMessage) CLASS HttpClient
         RETURN NIL
     ENDIF
     //#ifndef _HB_DEBUG
-    ? HB_DATETIME(), "[HttpClient]", HB_JsonEncode(xMessage, .F.)
+    ? HB_DATETIME(), "[HttpClient" + ALLTRIM(STR(::nInstanceId)) + "]", HB_JsonEncode(xMessage, .F.)
     // #end
 RETURN NIL
 

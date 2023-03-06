@@ -1,7 +1,7 @@
 #include "minigui.ch"
 
 MEMVAR OClient2
-MEMVAR hInstance
+STATIC hInstance
 
 #define ACTION_UPLOAD "ADD_USER"
 #define ACTION_REFRESH "LIST_USERS"
@@ -51,6 +51,7 @@ MEMVAR hInstance
  RETURN NIL
  
  FUNCTION Win2_OnWmCopyData(nHandle, cData)
+    ? "Win_2", nHandle, hInstance, IIF(nHandle == hInstance, "CORRECT", "MISS"), cData
     IF nHandle != hInstance
         RETURN NIL
     ENDIF
