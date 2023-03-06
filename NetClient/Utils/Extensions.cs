@@ -18,5 +18,8 @@ namespace NetClient
             return HelpText.RenderParsingErrorsTextAsLines(result, builder.FormatError, builder.FormatMutuallyExclusiveSetErrors, 1);
         }
 
+        public static string ToString(this byte[] bytes, Encoding encoding)
+            => encoding.GetString(bytes);
+
     }
 }

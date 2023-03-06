@@ -49,9 +49,9 @@ namespace NetClient.Services
             try
             {
                 if (options.Debug) logger.Debug($"[SendMessage] Recieved message {raw.Length} bytes!");
-                if (options.Debug && !Debugger.IsAttached) File.WriteAllBytes("message.txt", raw);
                 var message = bus.Deserialize(raw);
                 if (message == null) return;
+                if (options.Debug && !Debugger.IsAttached && message.Type == MessageBus.Types.Request) File.WriteAllBytes("message.txt", raw);
                 if (options.Debug) logger.Info($"Recieved message: {message.Type}");
                 await OnRecognizedMessage(message);
             }

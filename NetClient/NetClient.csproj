@@ -73,6 +73,7 @@
     <Compile Include="Data\DataResponse.cs" />
     <Compile Include="Services\HttpService.cs" />
     <Compile Include="Services\KeepAliveService.cs" />
+    <Compile Include="Utils\ByteArrayReader.cs" />
     <Compile Include="Utils\ProgramArgs.cs" />
     <Compile Include="Utils\Extensions.cs" />
     <Compile Include="Forms\FormDebug.cs">

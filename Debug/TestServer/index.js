@@ -59,7 +59,16 @@ const users1251 = [
         birthdate: '16.07.1985'
     }
 ]
-const users = users1251;
+let users = users1251;
+
+const formatter = new Intl.DateTimeFormat(undefined, {
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric'
+});
+
+users = users.map(item => ({ ...item, updated_at: formatter.format(Date.now()) }))
+
 
 app.get('/', (req, res) => {
   res.send('Hello World!')
@@ -70,16 +79,14 @@ app.get('/users', (req, res) => {
 })
 
 app.post('/users/add', (req, res) => {
-    const entity = req.body;
-    // console.log(req.headers);
-    // console.log(entity);
+    let entity = req.body;
     if (!entity.id) {
         res.statusCode = 400;
         res.send({message: 'Missing ID in body!'});
         return;
     }
     const { id } = entity;
-
+    entity = { ...entity, updated_at: formatter.format(Date.now()) }
     const index = users.findIndex(x => x.id == id);
     if (index >= 0) users[index] = entity;
     else users.push(entity);

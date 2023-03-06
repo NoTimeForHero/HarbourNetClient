@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using NetClient.Utils;
 
 namespace NetClient
 {
@@ -31,15 +32,18 @@ namespace NetClient
         public Message Deserialize(byte[] input)
         {
             if (input.Length < PREFIX.Length + TYPE_LEN) return null;
-            var stream = input;
+            using (var reader = new ByteArrayReader(input))
+            {
+                var prefix = reader.ReadString(PREFIX.Length, encoding);
+                if (prefix != PREFIX) return null;
 
-            var prefix = encoding.GetString(stream.Skip(0).Take(PREFIX.Length).ToArray());
-            if (prefix != PREFIX) return null;
+                var type = reader.ReadString(TYPE_LEN, encoding);
+                var payload = reader.ReadToEnd().ToString(encoding);
 
-            var type = encoding.GetString(stream.Skip(PREFIX.Length).Take(TYPE_LEN).ToArray());
-            var payload = encoding.GetString(stream.Skip(PREFIX.Length + TYPE_LEN).ToArray());
+                // var type2 = reader.ReadString(TYPE_LEN, encoding);
 
-            return new Message { Type = type, Payload = payload};
+                return new Message { Type = type, Payload = payload };
+            }
         }
 
         public class Message

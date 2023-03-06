@@ -124,7 +124,7 @@ METHOD Request(hParams, xCallback) CLASS HttpClient
 RETURN SELF
 
 METHOD DoHttpEvents() CLASS HttpClient
-    LOCAL nI, xItem, cData, cKey, aKeys
+    LOCAL nI, xItem, cData, cKey, aKeys, hQuery, xBody
     LOCAL xTemp
     LOCAL nCurrentTime := UNIXTIME()
     LOCAL xSendData
@@ -152,7 +152,11 @@ METHOD DoHttpEvents() CLASS HttpClient
 
         DO CASE
             CASE xItem["Status"] == STATUS_CREATED
-                xSendData := {"Key" => cKey, "Query" => xItem["Query"]}
+                hQuery := xItem["Query"]
+                xBody := IIF(HHasKey(hQuery, "Body"), hQuery["Body"], NIL)
+                // MsgDebug(hQuery)
+                // MsgInfo("Body: " + ValType(xBody))
+                xSendData := {"Key" => cKey, "Query" => hQuery}
                 xSendData := HB_JsonEncode(xSendData, .T.)
                 xSendData := EncodePacket(MESSAGE_REQUEST, xSendData)
                 SendMessageData(::nTargetWindow, xSendData)     
@@ -212,27 +216,31 @@ METHOD OnMessage(cPayload) CLASS HttpClient
 RETURN .T.
 
 
-STATIC FUNCTION EncodePacket(cType, cMessage)
+STATIC FUNCTION EncodePacket(cType, cMessage, cBinary)
     LOCAL cResult
-    DEFAULT cMessage TO ""
+    DEFAULT cMessage := "", cBinary := ""
     cResult := MSG_PREFIX + cType + cMessage
 RETURN cResult
 
 STATIC FUNCTION DecodePacket(cPayload)
-    LOCAL nSize, cType, cBody
+    LOCAL cPrefix, cType, cBody
     LOCAL nMinLength := LEN(MSG_PREFIX) + MSG_TYPE_LEN    
-
+    LOCAL nOffset := 1
+    
     IF LEN(cPayload) <= nMinLength
         RETURN NIL
     ENDIF
-
-    IF SUBSTR(cPayload, 1, LEN(MSG_PREFIX)) != MSG_PREFIX
+    
+    cPrefix := SUBSTR(cPayload, nOffset, LEN(MSG_PREFIX))
+    nOffset := nOffset + LEN(MSG_PREFIX)
+    
+    IF cPrefix != MSG_PREFIX
         RETURN NIL
     ENDIF
-
-    nSize := 1 + LEN(MSG_PREFIX)
-    cType := SUBSTR(cPayload, nSize, MSG_TYPE_LEN)
-
-    nSize := nSize + MSG_TYPE_LEN
-    cBody := SUBSTR(cPayload, nSize, LEN(cPayload) - nSize + 1)
+    
+    cType := SUBSTR(cPayload, nOffset, MSG_TYPE_LEN)
+    nOffset := nOffset + MSG_TYPE_LEN
+    
+    cBody := SUBSTR(cPayload, nOffset, LEN(cPayload) - nOffset + 1)
+    
 RETURN { cType, cBody }

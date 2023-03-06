@@ -27,7 +27,7 @@ namespace NetClient
 
                 if (args.Length == 0)
                 {
-                    args = new[] { "--hwnd=0", "--ttl=30" };
+                    args = new[] { "--hwnd=0", "--ttl=30", "--debug" };
                     logger.Info("Overriding args with debug values: " + string.Join(", ", args));
                 }
 
