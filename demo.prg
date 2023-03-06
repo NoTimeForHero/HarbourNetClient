@@ -13,6 +13,8 @@ MEMVAR ForceClose
 #define ACTION_NOT_FOUND "404_NOT_FOUND"
 #define ACTION_TIMEOUT "TIMEOUT"
 
+#define CLRF CHR(10) + CHR(13)
+
 PROCEDURE Main
 
 	PUBLIC OClient := NIL
@@ -84,7 +86,7 @@ RETURN NIL
 FUNCTION MakeHttpRequest(cAction) 
 	// LOCAL xCallback := {|cCode, hResponse| MsgInfo(HB_JsonEncode({cCode, hResponse}, .T.)) }
 	LOCAL hParams := HASH()
-	LOCAL hBody
+	LOCAL hDetails
 	LOCAL xUser
 
 	IF cAction == ACTION_LIST_USERS
@@ -92,6 +94,15 @@ FUNCTION MakeHttpRequest(cAction)
 		hParams["Method"] = "GET"
 		hParams["Headers"] = { "Content-Type" => "application/json"}
 		OClient:Request(hParams, @OnListUsers())		
+	ELSEIF cAction == ACTION_NOT_FOUND
+		hParams["Url"] = "http://localhost:3000/not_found"
+		hParams["Method"] = "GET"
+		OClient:Request(hParams, @OnHttpAnswer())				
+	ELSEIF cAction == ACTION_TIMEOUT
+		hParams["Url"] = "http://localhost:3000/timeout"
+		hParams["Method"] = "GET"
+		hParams["Timeout"] = 20
+		OClient:Request(hParams, @OnHttpAnswer())				
 	ELSEIF cAction == ACTION_ADD_USER
 		// Encoding: Windows-1251
 		xUser := InputBox ( 'Please enter user info with ; delimiters:' , 'User Info' , '11;Петр;Кузнецов;04.20.1952' )
@@ -102,46 +113,42 @@ FUNCTION MakeHttpRequest(cAction)
 		IF LEN(xUser) < 4
 			RETURN NIL
 		ENDIF 
-		hBody := {"id" => xUser[1], "name" => xUser[2], "surname" => xUser[3], "birthdate" => xUser[4]}
+		hDetails := {"id" => xUser[1], "name" => xUser[2], "surname" => xUser[3], "birthdate" => xUser[4]}
 		hParams["Url"] = "http://localhost:3000/users/add"
 		hParams["Method"] = "POST"
 		// Now it set this automatically if you pass to body HASH or ARRAY
 		// hParams["Headers"] = { "Content-Type" => "application/json"}		
-		hParams["Body"] = hBody
-		OClient:Request(hParams, @OnHttpAnswer())	
-	ELSEIF cAction == ACTION_NOT_FOUND
-		hParams["Url"] = "http://localhost:3000/not_found"
-		hParams["Method"] = "GET"
-		hParams["Headers"] = { "Content-Type" => "application/json"}
-		OClient:Request(hParams, @OnHttpAnswer())				
-	ELSEIF cAction == ACTION_TIMEOUT
-		hParams["Url"] = "http://localhost:3000/timeout"
-		hParams["Method"] = "GET"
-		hParams["Headers"] = { "Content-Type" => "application/json"}
-		hParams["Timeout"] = 20
-		OClient:Request(hParams, @OnHttpAnswer())				
+		hParams["Body"] = hDetails
+		OClient:Request(hParams, @OnHttpAnswer())			
 	ENDIF
 RETURN NIL
 
-FUNCTION OnListUsers(cStatus, hBody) 
+FUNCTION OnListUsers(cStatus, cBody) 
 	LOCAL cMessage
 	IF cStatus != OClient:STATUS_SUCESS
-		MsgStop("HTTP Request failed!")
+		MsgStop("HTTP Request failed!2")
 		RETURN NIL
 	END
-	cMessage := hBody["Response"]
+	// WARNING! You should manually check that server responding with JSON!
+	cMessage := cBody
 	cMessage := HB_JsonDecode(cMessage)
 	cMessage := HB_JsonEncode(cMessage, .T.)
 	MsgInfo(cMessage)
 RETURN NIL
 
-FUNCTION OnHttpAnswer(cStatus, hBody)
+FUNCTION OnHttpAnswer(cStatus, cBody, hDetails)
+	LOCAL cMessage
 	IF cStatus == OClient:STATUS_ERROR
-		MsgStop(HB_JsonEncode({hBody}, .T.))
+		MsgStop(HB_JsonEncode({hDetails}, .T.))
 	ELSEIF cStatus == OClient:STATUS_TIMEOUT
 		MsgExclamation("Timeout!")
 	ELSEIF cStatus == OClient:STATUS_SUCESS
-		MsgInfo(HB_JsonEncode({hBody}, .T.))
+		cMessage := HB_JsonEncode({hDetails, cBody}, .T.)
+		IF hDetails["Success"]
+			MsgInfo(cMessage)
+		ELSE
+			MsgExclamation(cMessage)
+		ENDIF
 	ELSE
 		MsgStop("Invalid status: " + cStatus)
 	ENDIF

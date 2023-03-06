@@ -12,18 +12,10 @@ namespace NetClient.Data
         public string Type { get; set; }
         public object Data { get; set; }
 
-        public static DataResponse Error(string key, Exception ex)
-            => new DataResponse { Key = key, Type = "Error", Data = ex };
-        public static DataResponse Complete(string key, Http data)
-            => new DataResponse { Key = key, Type = "Success", Data = data };
-
-        public class Http
+        public class AllowedTypes
         {
-            public bool Success { get; set; }
-            public int LoadingTimeMs { get; set; }
-            public int StatusCode { get; set; }
-            public string Response { get; set; }
-            public Dictionary<string, string> Headers { get; set; }
+            public const string Error = "Error";
+            public const string Success = "Success";
         }
     }
 }

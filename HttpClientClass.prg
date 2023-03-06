@@ -124,7 +124,7 @@ METHOD Request(hParams, xCallback) CLASS HttpClient
 RETURN SELF
 
 METHOD DoHttpEvents() CLASS HttpClient
-    LOCAL nI, xItem, cData, cKey, aKeys, xBody
+    LOCAL nI, xItem, cKey, aKeys, xBody
     LOCAL xTemp
     LOCAL nCurrentTime := UNIXTIME()
     LOCAL xSendData
@@ -140,7 +140,6 @@ METHOD DoHttpEvents() CLASS HttpClient
         ::nLastKeepAlive := nCurrentTime        
     ENDIF
 
-    cData := "DoHttpEvents: " + CLRF
     aKeys := HGetKeys(::hSendingRequest)
     FOR nI := 1 TO LEN(aKeys)
         cKey := aKeys[nI]
@@ -173,18 +172,16 @@ METHOD DoHttpEvents() CLASS HttpClient
             CASE xItem["Status"] == STATUS_COMPLETED
                 HDel(::hSendingRequest, cKey)                
                 ::Log({"Request completed: ", cKey})                
-                ::Log(xItem["Response"])
+                ::Log(xItem["Details"])
 
-                Do(xItem["Callback"], xItem["Response"]["Type"], xItem["Response"]["Data"])
+                Do(xItem["Callback"], xItem["Details"]["Type"], xItem["Body"], xItem["Details"]["Data"])
         ENDCASE
-
-        cData := cData + cKey + ": " + HB_JsonEncode(xItem) + CLRF
     NEXT
 RETURN SELF
 
 METHOD OnMessage(cPayload) CLASS HttpClient
 
-    LOCAL cType, cBody, cKey, cParsed
+    LOCAL cType, cBody, cKey, cParsed, cBinary
 
     IF ::lDisposed == .T.
         RETURN .F.
@@ -196,6 +193,7 @@ METHOD OnMessage(cPayload) CLASS HttpClient
     ENDIF
     cType := cParsed[1]
     cBody := cParsed[2]
+    cBinary := cParsed[3]
 
     do case
     case cType == MESSAGE_INITIALIZE
@@ -206,7 +204,8 @@ METHOD OnMessage(cPayload) CLASS HttpClient
        cKey := cBody["Key"]
        IF HHasKey(::hSendingRequest, cKey)
         ::hSendingRequest[cKey]["Status"] = STATUS_COMPLETED
-        ::hSendingRequest[cKey]["Response"] = cBody
+        ::hSendingRequest[cKey]["Details"] = cBody
+        ::hSendingRequest[cKey]["Body"] = cBinary
        ENDIF
     endcase
     ::DoHttpEvents()    

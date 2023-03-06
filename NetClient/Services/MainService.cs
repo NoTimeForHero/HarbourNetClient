@@ -74,20 +74,21 @@ namespace NetClient.Services
                     if (request == null) throw new NullReferenceException("Message deserialization failed!");
                     var key = request.Key;
                     logger.Info("Get new request with key: " + key);
+                    byte[] binaryData = null;
                     DataResponse response;
                     try
                     {
                         var res = await http.SendRequest(request, message.Binary);
-                        response = DataResponse.Complete(key, res);
+                        binaryData = res.Body;
+                        response = new DataResponse { Key = key, Type = DataResponse.AllowedTypes.Success, Data = res.Details };
                     }
                     catch (Exception ex)
                     {
                         logger.Info("Request failed: " + ex.GetType().FullName + ": " + ex.Message);
                         logger.Debug(ex);
-                        response = DataResponse.Error(key, ex);
+                        response = new DataResponse { Key = key, Type = DataResponse.AllowedTypes.Error, Data = ex };
                     }
-
-                    var payload = bus.Serialize(MessageBus.Types.Response, JsonConvert.SerializeObject(response));
+                    var payload = bus.Serialize(MessageBus.Types.Response, JsonConvert.SerializeObject(response), binaryData);
                     Win32.SendDataToWindow(new IntPtr(options.HostHWND), payload);
                     break;
                 case MessageBus.Types.KeepAlive:

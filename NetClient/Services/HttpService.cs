@@ -25,7 +25,7 @@ namespace NetClient.Services
 
         public static int DebugCounter = 0;
 
-        public async Task<DataResponse.Http> SendRequest(DataRequest input, byte[] requestBody)
+        public async Task<Response> SendRequest(DataRequest input, byte[] requestBody)
         {
             var query = input.Query;
             logger.Info($"HTTP Request: {query.Method} {query.Url}");
@@ -67,23 +67,36 @@ namespace NetClient.Services
             var response = await client.SendAsync(request);
             var responseHeaders = response.Headers
                 .ToDictionary(x => x.Key, x => string.Join(";", x.Value));
-            var body = await response.Content.ReadAsStringAsync();
+            var body = await response.Content.ReadAsByteArrayAsync();
             watcher.Stop();
 
             if (query.ResponseBodyBinary) throw new NotImplementedException("Binary body is not supported yet!");
+            else
+            {
+                // TODO: Find correct server response encoding
+                body = Encoding.Convert(Encoding.UTF8, options.Parsed.Encoding, body);
+            }
 
             var elapsed = (int)watcher.Elapsed.TotalMilliseconds;
             logger.Info($"Response {(int)response.StatusCode} {response.StatusCode} in {elapsed} ms with {body.Length} bytes length!");
 
-            var result = new DataResponse.Http
+            var isSuccess = (int)response.StatusCode >= 200 && (int)response.StatusCode <= 299;
+
+            var details = new Dictionary<string, object>
             {
-                Success = (int)response.StatusCode >= 200 && (int)response.StatusCode <= 299,
-                Headers = responseHeaders,
-                LoadingTimeMs = elapsed,
-                StatusCode = (int)response.StatusCode,
-                Response = body
+                {"Success", isSuccess},
+                {"Headers", responseHeaders},
+                {"LoadingTimeMs", elapsed},
+                {"StatusCode",  (int)response.StatusCode}
             };
-            return result;
+
+            return new Response { Details = details, Body = body };
+        }
+
+        public class Response
+        {
+            public Dictionary<string, object> Details { get; set; }
+            public byte[] Body { get; set; }
         }
     }
 }
