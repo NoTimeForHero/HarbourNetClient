@@ -24,6 +24,8 @@ namespace NetClient
 
             target = LogManager.Configuration.AllTargets.OfType<MemoryTarget>().FirstOrDefault();
             timerRefreshLogs_Tick(null, null);
+
+            Text += " - " + Handle;
         }
 
         private void timerRefreshLogs_Tick(object sender, EventArgs e)

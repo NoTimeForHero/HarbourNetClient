@@ -6,6 +6,7 @@
 #include "minigui.ch"
 
 MEMVAR OClient
+MEMVAR hInstance
 MEMVAR ForceClose
 
 #define ACTION_ADD_USER "ADD_USER"
@@ -21,15 +22,15 @@ PROCEDURE Demo1()
 
 	PUBLIC OClient := NIL
 	PUBLIC ForceClose := .F.
+	PUBLIC hInstance
 
-	SET EVENTS FUNCTION TO MyEvents
 	SET FONT TO 'Segoe UI', 14
 
 	DEFINE WINDOW Win_1		;
 		CLIENTAREA 800, 400	;
 		TITLE 'HttpClientDemo'	;
 		WINDOWTYPE MAIN         ;
-		ON INIT OnInit( App.Handle ) ;
+		ON INIT OnInit() ;
 		ON RELEASE OnRelease() ;
 
 		@ 10,10 BUTTON BUTTON_1 ;
@@ -89,21 +90,22 @@ PROCEDURE Demo1()
 
 	Win_1.Center
 
-	Win_1.Activate
+	//Win_1.Activate
 RETURN
 
-FUNCTION OnInit(nHandle)
+STATIC FUNCTION OnInit()
   LOCAL cPath, hOptions
-  LOCAL cHandle := ALLTRIM(STR(nHandle))
-  LOCAL cSelfHandle := ALLTRIM(STR(ThisWindow.Handle))
+  hInstance := ThisWindow.Handle
 
   // hOptions := { "ClientTTL" => 10, "KeepAliveInterval" => 5, "Timeout" => 2}
   hOptions := { "Arguments" => "--hwnd=%HANDLE% --ttl=%TTL% --debug" }
   cPath := GetStartUpFolder() + "\NetClient\bin\Debug\NetClient.exe"
-  OClient := HttpClient():New(nHandle, cPath, hOptions)
+
+  OClient := HttpClient():New(hInstance, cPath, hOptions)
+  ThisWindow.Title := ThisWindow.Title + " - " + ALLTRIM(STR(hInstance))
 RETURN NIL
 
-FUNCTION MakeHttpRequest(cAction) 
+STATIC FUNCTION MakeHttpRequest(cAction) 
 	// LOCAL xCallback := {|cCode, hResponse| MsgInfo(HB_JsonEncode({cCode, hResponse}, .T.)) }
 	LOCAL hParams := HASH()
 	LOCAL hDetails
@@ -153,7 +155,7 @@ FUNCTION MakeHttpRequest(cAction)
 	ENDIF
 RETURN NIL
 
-FUNCTION OnListUsers(cStatus, cBody) 
+STATIC FUNCTION OnListUsers(cStatus, cBody) 
 	LOCAL cMessage
 	IF cStatus != OClient:STATUS_SUCESS
 		MsgStop("HTTP Request failed!2")
@@ -166,7 +168,7 @@ FUNCTION OnListUsers(cStatus, cBody)
 	MsgInfo(cMessage)
 RETURN NIL
 
-FUNCTION OnHttpAnswer(cStatus, cBody, hDetails)
+STATIC FUNCTION OnHttpAnswer(cStatus, cBody, hDetails)
 	LOCAL cMessage
 	IF cStatus == OClient:STATUS_ERROR
 		MsgStop(HB_JsonEncode({hDetails}, .T.))
@@ -184,13 +186,16 @@ FUNCTION OnHttpAnswer(cStatus, cBody, hDetails)
 	ENDIF
 RETURN NIL
 
-FUNCTION OnRelease
+STATIC FUNCTION OnRelease
 	IF ForceClose == .T.
 		RETURN NIL
 	ENDIF
 	OClient:Release()
 RETURN NIL
 
-FUNCTION OnWmCopyData(cData)
+FUNCTION Win1_OnWmCopyData(nHandle, cData)
+   IF nHandle != hInstance
+		RETURN NIL
+   ENDIF	
    OClient:OnMessage(cData)   
 RETURN NIL

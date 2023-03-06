@@ -1,24 +1,6 @@
 
-#define WM_COPYDATA           74
 #define CDM_RUNCMD         52888 // 0xCE98
 #define WM_DROPFILES         563 // 0x0233
-
-//------------------------------------------------------------------------------*
-Function MyEvents ( hWnd, nMsg, wParam, lParam )
-   //------------------------------------------------------------------------------*
-   Local nCargo, cCmd
-
-   do case
-      case nMsg == WM_COPYDATA
-         cCmd := GetMessageData( lParam, @nCargo )
-         OnWmCopyData(cCmd)
-      //otherwise
-      //   Events ( hWnd, nMsg, wParam, lParam )
-   endcase
-
-Return Events ( hWnd, nMsg, wParam, lParam )
-
-
 
 #pragma BEGINDUMP
 

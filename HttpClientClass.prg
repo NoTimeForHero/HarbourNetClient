@@ -174,7 +174,7 @@ METHOD DoHttpEvents() CLASS HttpClient
                 ::Log({"Request completed: ", cKey})                
                 ::Log(xItem["Details"])
 
-                Do(xItem["Callback"], xItem["Details"]["Type"], xItem["Body"], xItem["Details"]["Data"])
+                Do(xItem["Callback"], xItem["Details"]["Type"], xItem["Body"], xItem["Details"]["Data"], )
         ENDCASE
     NEXT
 RETURN SELF
