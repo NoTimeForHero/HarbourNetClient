@@ -135,7 +135,7 @@ METHOD DoHttpEvents() CLASS HttpClient
     ENDIF
 
     IF nCurrentTime > ::nLastKeepAlive + ::hOptions["KeepAliveInterval"]
-        xSendData := MSG_PREFIX + MESSAGE_KEEP_ALIVE
+        xSendData := EncodePacket(MESSAGE_KEEP_ALIVE)
         SendMessageData(::nTargetWindow, xSendData)     
         ::nLastKeepAlive := nCurrentTime        
     ENDIF
@@ -154,7 +154,7 @@ METHOD DoHttpEvents() CLASS HttpClient
             CASE xItem["Status"] == STATUS_CREATED
                 xSendData := {"Key" => cKey, "Query" => xItem["Query"]}
                 xSendData := HB_JsonEncode(xSendData, .T.)
-                xSendData := MSG_PREFIX + MESSAGE_REQUEST + xSendData
+                xSendData := EncodePacket(MESSAGE_REQUEST, xSendData)
                 SendMessageData(::nTargetWindow, xSendData)     
                 xItem["ExpiresTime"] := UNIXTIME() + xItem["Timeout"]                       
                 xItem["Status"] := STATUS_SENDED
@@ -182,27 +182,18 @@ RETURN SELF
 
 METHOD OnMessage(cPayload) CLASS HttpClient
 
-    LOCAL cType, cBody, cKey
-    LOCAL nSize
-    LOCAL nMinLength := LEN(MSG_PREFIX) + MSG_TYPE_LEN
+    LOCAL cType, cBody, cKey, cParsed
 
     IF ::lDisposed == .T.
         RETURN .F.
     ENDIF
 
-    IF LEN(cPayload) <= nMinLength
+    cParsed := DecodePacket(cPayload)
+    IF cParsed == NIL
         RETURN .F.
     ENDIF
-
-    IF SUBSTR(cPayload, 1, LEN(MSG_PREFIX)) != MSG_PREFIX
-        RETURN .F.
-    ENDIF
-
-    nSize := 1 + LEN(MSG_PREFIX)
-    cType := SUBSTR(cPayload, nSize, MSG_TYPE_LEN)
-
-    nSize := nSize + MSG_TYPE_LEN
-    cBody := SUBSTR(cPayload, nSize, LEN(cPayload) - nSize + 1)
+    cType := cParsed[1]
+    cBody := cParsed[2]
 
     do case
     case cType == MESSAGE_INITIALIZE
@@ -219,3 +210,29 @@ METHOD OnMessage(cPayload) CLASS HttpClient
     ::DoHttpEvents()    
 
 RETURN .T.
+
+
+STATIC FUNCTION EncodePacket(cType, cMessage)
+    LOCAL cResult
+    DEFAULT cMessage TO ""
+    cResult := MSG_PREFIX + cType + cMessage
+RETURN cResult
+
+STATIC FUNCTION DecodePacket(cPayload)
+    LOCAL nSize, cType, cBody
+    LOCAL nMinLength := LEN(MSG_PREFIX) + MSG_TYPE_LEN    
+
+    IF LEN(cPayload) <= nMinLength
+        RETURN NIL
+    ENDIF
+
+    IF SUBSTR(cPayload, 1, LEN(MSG_PREFIX)) != MSG_PREFIX
+        RETURN NIL
+    ENDIF
+
+    nSize := 1 + LEN(MSG_PREFIX)
+    cType := SUBSTR(cPayload, nSize, MSG_TYPE_LEN)
+
+    nSize := nSize + MSG_TYPE_LEN
+    cBody := SUBSTR(cPayload, nSize, LEN(cPayload) - nSize + 1)
+RETURN { cType, cBody }
