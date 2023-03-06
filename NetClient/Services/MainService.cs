@@ -48,10 +48,10 @@ namespace NetClient.Services
         {
             try
             {
+                if (options.Debug && !Debugger.IsAttached) File.WriteAllBytes("message.txt", raw);
                 if (options.Debug) logger.Debug($"[SendMessage] Recieved message {raw.Length} bytes!");
                 var message = bus.Deserialize(raw);
                 if (message == null) return;
-                if (options.Debug && !Debugger.IsAttached && message.Type == MessageBus.Types.Request) File.WriteAllBytes("message.txt", raw);
                 if (options.Debug) logger.Info($"Recieved message: {message.Type}");
                 await OnRecognizedMessage(message);
             }
@@ -77,7 +77,7 @@ namespace NetClient.Services
                     DataResponse response;
                     try
                     {
-                        var res = await http.SendRequest(request);
+                        var res = await http.SendRequest(request, message.Binary);
                         response = DataResponse.Complete(key, res);
                     }
                     catch (Exception ex)

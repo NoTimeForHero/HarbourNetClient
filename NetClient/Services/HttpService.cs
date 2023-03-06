@@ -25,7 +25,7 @@ namespace NetClient.Services
 
         public static int DebugCounter = 0;
 
-        public async Task<DataResponse.Http> SendRequest(DataRequest input)
+        public async Task<DataResponse.Http> SendRequest(DataRequest input, byte[] requestBody)
         {
             var query = input.Query;
             logger.Info($"HTTP Request: {query.Method} {query.Url}");
@@ -52,7 +52,16 @@ namespace NetClient.Services
                     }
                 }
             }
-            if (query.Body != null) request.Content = new StringContent(JsonConvert.SerializeObject(query.Body), Encoding.UTF8, contentType);
+
+            if (requestBody != null && requestBody.Length > 0)
+            {
+                if (query.BodyBinary) throw new NotImplementedException("Binary body is not supported yet!");
+                else
+                {
+                    var content = requestBody.ToString(options.Parsed.Encoding);
+                    request.Content = new StringContent(content, Encoding.UTF8, contentType);
+                }
+            }
 
             var watcher = Stopwatch.StartNew();
             var response = await client.SendAsync(request);

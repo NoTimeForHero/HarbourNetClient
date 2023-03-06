@@ -75,7 +75,8 @@ FUNCTION OnInit(nHandle)
   LOCAL cHandle := ALLTRIM(STR(nHandle))
   LOCAL cSelfHandle := ALLTRIM(STR(ThisWindow.Handle))
 
-  hOptions := { "ClientTTL" => 10, "KeepAliveInterval" => 5, "Timeout" => 2}
+  // hOptions := { "ClientTTL" => 10, "KeepAliveInterval" => 5, "Timeout" => 2}
+  hOptions := { "Arguments" => "--hwnd=%HANDLE% --ttl=%TTL% --debug" }
   cPath := GetStartUpFolder() + "\NetClient\bin\Debug\NetClient.exe"
   OClient := HttpClient():New(nHandle, cPath, hOptions)
 RETURN NIL
@@ -104,9 +105,9 @@ FUNCTION MakeHttpRequest(cAction)
 		hBody := {"id" => xUser[1], "name" => xUser[2], "surname" => xUser[3], "birthdate" => xUser[4]}
 		hParams["Url"] = "http://localhost:3000/users/add"
 		hParams["Method"] = "POST"
-		hParams["Headers"] = { "Content-Type" => "application/json"}		
+		// Now it set this automatically if you pass to body HASH or ARRAY
+		// hParams["Headers"] = { "Content-Type" => "application/json"}		
 		hParams["Body"] = hBody
-		// hParams["Body"] = HB_JsonEncode(hBody, .T.)
 		OClient:Request(hParams, @OnHttpAnswer())	
 	ELSEIF cAction == ACTION_NOT_FOUND
 		hParams["Url"] = "http://localhost:3000/not_found"
@@ -126,6 +127,7 @@ FUNCTION OnListUsers(cStatus, hBody)
 	LOCAL cMessage
 	IF cStatus != OClient:STATUS_SUCESS
 		MsgStop("HTTP Request failed!")
+		RETURN NIL
 	END
 	cMessage := hBody["Response"]
 	cMessage := HB_JsonDecode(cMessage)

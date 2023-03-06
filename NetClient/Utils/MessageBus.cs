@@ -38,11 +38,16 @@ namespace NetClient
                 if (prefix != PREFIX) return null;
 
                 var type = reader.ReadString(TYPE_LEN, encoding);
-                var payload = reader.ReadToEnd().ToString(encoding);
+                var payloadSize = reader.ReadInteger();
+                var payload = reader.ReadString(payloadSize, encoding);
+                var binary = reader.ReadToEnd();
 
-                // var type2 = reader.ReadString(TYPE_LEN, encoding);
-
-                return new Message { Type = type, Payload = payload };
+                return new Message
+                {
+                    Type = type,
+                    Payload = payload,
+                    Binary = binary
+                };
             }
         }
 
@@ -50,6 +55,7 @@ namespace NetClient
         {
             public string Type { get; set; }
             public string Payload { get; set; }
+            public byte[] Binary { get; set; }
         }
 
         public static class Types

@@ -46,7 +46,7 @@ METHOD New(nOwnerWindow, cPath, hOptions) CLASS HttpClient
     LOCAL oError
     ::nOwnerWindow := nOwnerWindow
     ::hSendingRequest := HASH()
-
+    ::nLastKeepAlive := UNIXTIME()
 
     hDefaults := HASH()
     hDefaults["Arguments"] := "--hwnd=%HANDLE% --ttl=%TTL%"
@@ -124,7 +124,7 @@ METHOD Request(hParams, xCallback) CLASS HttpClient
 RETURN SELF
 
 METHOD DoHttpEvents() CLASS HttpClient
-    LOCAL nI, xItem, cData, cKey, aKeys, hQuery, xBody
+    LOCAL nI, xItem, cData, cKey, aKeys, xBody
     LOCAL xTemp
     LOCAL nCurrentTime := UNIXTIME()
     LOCAL xSendData
@@ -152,13 +152,11 @@ METHOD DoHttpEvents() CLASS HttpClient
 
         DO CASE
             CASE xItem["Status"] == STATUS_CREATED
-                hQuery := xItem["Query"]
-                xBody := IIF(HHasKey(hQuery, "Body"), hQuery["Body"], NIL)
-                // MsgDebug(hQuery)
-                // MsgInfo("Body: " + ValType(xBody))
-                xSendData := {"Key" => cKey, "Query" => hQuery}
+                xBody := TRANSFORM_BODY(xItem["Query"])
+                ::Log({"xBody", xBody})
+                xSendData := {"Key" => cKey, "Query" => xItem["Query"]}
                 xSendData := HB_JsonEncode(xSendData, .T.)
-                xSendData := EncodePacket(MESSAGE_REQUEST, xSendData)
+                xSendData := EncodePacket(MESSAGE_REQUEST, xSendData, xBody)
                 SendMessageData(::nTargetWindow, xSendData)     
                 xItem["ExpiresTime"] := UNIXTIME() + xItem["Timeout"]                       
                 xItem["Status"] := STATUS_SENDED
@@ -215,11 +213,35 @@ METHOD OnMessage(cPayload) CLASS HttpClient
 
 RETURN .T.
 
+STATIC FUNCTION TRANSFORM_BODY(hQuery)
+    LOCAL xBody, hHeaders
+    IF !HHasKey(hQuery, "Body")
+        RETURN NIL
+    ENDIF
+
+    xBody := hQuery["Body"]    
+    HDel(hQuery, "Body")    
+
+    IF !HHasKey(hQuery, "Headers")
+        hQuery["Headers"] = HASH()
+    ENDIF    
+
+    IF ValType(xBody) == 'H' .OR. ValType(xBody) == 'A'
+        xBody := HB_JsonEncode(xBody, .T.)        
+        hHeaders := hQuery["Headers"]
+        IF !HHasKey(hHeaders, "Content-Type")
+            hHeaders["Content-Type"] = "application/json"
+        ENDIF
+    ENDIF
+RETURN xBody
+
+
+#define INT_LEN 4
 
 STATIC FUNCTION EncodePacket(cType, cMessage, cBinary)
     LOCAL cResult
     DEFAULT cMessage := "", cBinary := ""
-    cResult := MSG_PREFIX + cType + cMessage
+    cResult := MSG_PREFIX + cType + L2Bin(LEN(cMessage)) + cMessage + cBinary
 RETURN cResult
 
 STATIC FUNCTION DecodePacket(cPayload)
