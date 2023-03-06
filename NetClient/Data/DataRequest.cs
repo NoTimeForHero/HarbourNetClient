@@ -28,7 +28,7 @@ namespace NetClient.Data
             public Dictionary<string, string> Headers { get; set; }
 
             public bool RequestBodyBinary { get; set; } = false;
-            public bool ResponseBodyBinary { get; set; } = false;
+            public bool BinaryResponse { get; set; } = false;
         }
     }
 }

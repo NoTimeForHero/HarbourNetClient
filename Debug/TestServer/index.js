@@ -4,24 +4,31 @@ const app = express()
 const port = 3000
 
 const modules = [
-    require('./examples/users')
+    require('./examples/users'),
+    require('./examples/cats')
 ]
 
-console.log('modules', modules)
+const main = async() => {
 
-app.use(express.json());
+    app.use(express.json());
 
-app.get('/', (req, res) => {
-  res.send('Hello World!')
-})
+    app.get('/', (req, res) => {
+        res.send('Hello World!')
+    })
 
-modules.forEach((module) => module(app))
 
-app.get('/timeout', async(req, res) => {
-    await wait(8000);
-    res.send({message: 'Hello world!'});
-})
+    app.get('/timeout', async(req, res) => {
+        await wait(8000);
+        res.send({message: 'Hello world!'});
+    })
 
-app.listen(port, () => {
-  console.log(`Example app listening on port ${port}`)
-})
+    console.log('Loading custom modules...');
+    const promises = modules.map((module) => module(app));
+    await Promise.all(promises);
+
+    app.listen(port, () => {
+        console.log(`Example app listening on port ${port}`)
+    })
+
+};
+main();

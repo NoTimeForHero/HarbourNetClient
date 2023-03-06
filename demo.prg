@@ -194,7 +194,6 @@ STATIC FUNCTION OnRelease
 RETURN NIL
 
 FUNCTION Win1_OnWmCopyData(nHandle, cData)
-   ? "Win_1", nHandle, hInstance, IIF(nHandle == hInstance, "CORRECT", "MISS"), cData
    IF nHandle != hInstance
 		RETURN NIL
    ENDIF	

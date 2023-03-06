@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
@@ -70,8 +71,7 @@ namespace NetClient.Services
             var body = await response.Content.ReadAsByteArrayAsync();
             watcher.Stop();
 
-            if (query.ResponseBodyBinary) throw new NotImplementedException("Binary body is not supported yet!");
-            else
+            if (!query.BinaryResponse)
             {
                 // TODO: Find correct server response encoding
                 body = Encoding.Convert(Encoding.UTF8, options.Parsed.Encoding, body);
