@@ -6,6 +6,7 @@ using System.Text;
 using System.Windows.Forms;
 using CommandLine;
 using CommandLine.Text;
+using NetClient.Forms;
 using NetClient.Services;
 using Newtonsoft.Json;
 using NLog;
@@ -51,14 +52,16 @@ namespace NetClient
                 logger.Fatal(message);
                 return;
             }
-            // Lolwut?
             parsed.Value.Parsed.Encoding = Encoding.GetEncoding(parsed.Value.Encoding ?? "windows-1251");
 
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
 
             var container = new UnityContainer();
-            container.RegisterType<WatchableForm, FormDebug>();
+
+            if (parsed.Value.Debug) container.RegisterType<WatchableForm, FormDebug>();
+            else container.RegisterType<WatchableForm, FormHidden>();
+
             container.RegisterSingleton<MainService>();
             container.RegisterSingleton<HttpService>();
             container.RegisterInstance(parsed.Value);

@@ -69,6 +69,7 @@ const register = (app) => {
     })
     
     app.post('/users/add', (req, res) => {
+        console.log('Add new user!?');
         let entity = req.body;
         if (!entity.id) {
             res.statusCode = 400;

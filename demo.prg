@@ -67,13 +67,7 @@ PROCEDURE Demo1()
 			CAPTION "C# Error" ;
 			ACTION MakeHttpRequest(ACTION_ERROR) ;
 			WIDTH 160 ;
-			HEIGHT 40				
-		
-		@ 140,10 BUTTON BUTTON_7 ;
-			CAPTION "Get Image Info" ;
-			ACTION MakeHttpRequest(ACTION_ERROR) ;
-			WIDTH 240 ;
-			HEIGHT 60					
+			HEIGHT 40								
 
 		@ 320,10 BUTTON BUTTON_99 ;
 			CAPTION "ForceClose" ;
@@ -98,7 +92,7 @@ STATIC FUNCTION OnInit()
   hInstance := ThisWindow.Handle
 
   // hOptions := { "ClientTTL" => 10, "KeepAliveInterval" => 5, "Timeout" => 2}
-  hOptions := { "Arguments" => "--hwnd=%HANDLE% --ttl=%TTL% --debug" }
+  hOptions := { "Arguments" => "--hwnd=%HANDLE% --ttl=%TTL%" }
   cPath := GetStartUpFolder() + "\NetClient\bin\Debug\NetClient.exe"
 
   OClient := HttpClient():New(hInstance, cPath, hOptions)

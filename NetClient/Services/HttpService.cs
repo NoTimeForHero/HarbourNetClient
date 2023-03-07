@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
@@ -24,10 +25,6 @@ namespace NetClient.Services
             client = new HttpClient();
             this.options = options;
         }
-
-        public static int DebugCounter = 0;
-
-        private void ReplaceUri() {}
 
         public async Task<Response> SendRequest(DataRequest input, byte[] requestBody)
         {
@@ -65,6 +62,7 @@ namespace NetClient.Services
                 if (query.BinaryRequest)
                 {
                     request.Content = new ByteArrayContent(requestBody);
+                    request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");
                 }
                 else
                 {

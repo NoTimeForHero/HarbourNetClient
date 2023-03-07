@@ -10,8 +10,7 @@ const modules = [
 
 const main = async() => {
 
-
-    app.use(rawParser);
+    app.use(rawParser);    
     app.use(express.json());
 
     app.get('/', (req, res) => {

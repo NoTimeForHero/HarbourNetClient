@@ -71,7 +71,7 @@ STATIC aCats
    hInstance := ThisWindow.Handle   
  
    // hOptions := { "ClientTTL" => 10, "KeepAliveInterval" => 5, "Timeout" => 2}
-   hOptions := { "Arguments" => "--hwnd=%HANDLE% --ttl=%TTL% --debug" }
+   hOptions := { "Arguments" => "--hwnd=%HANDLE% --ttl=%TTL%" }
    cPath := GetStartUpFolder() + "\NetClient\bin\Debug\NetClient.exe"
 
    OClient2 := HttpClient():New(hInstance, cPath, hOptions)
