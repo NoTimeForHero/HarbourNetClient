@@ -37,12 +37,15 @@
   <ItemGroup>
     <Reference Include="CommandLine, Version=2.9.1.0, Culture=neutral, PublicKeyToken=5a870481e358d379, processorArchitecture=MSIL">
       <HintPath>packages\CommandLineParser.2.9.1\lib\net461\CommandLine.dll</HintPath>
+      <SpecificVersion>False</SpecificVersion>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>packages\Newtonsoft.Json.13.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <SpecificVersion>False</SpecificVersion>
     </Reference>
     <Reference Include="NLog, Version=5.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c, processorArchitecture=MSIL">
       <HintPath>packages\NLog.5.1.2\lib\net46\NLog.dll</HintPath>
+      <SpecificVersion>False</SpecificVersion>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Configuration" />
@@ -52,6 +55,7 @@
     <Reference Include="System.Net.Http.WebRequest" />
     <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=4.0.4.1, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>packages\System.Runtime.CompilerServices.Unsafe.4.5.2\lib\netstandard2.0\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+      <SpecificVersion>False</SpecificVersion>
     </Reference>
     <Reference Include="System.Web" />
     <Reference Include="System.Xml.Linq" />
@@ -64,14 +68,17 @@
     <Reference Include="System.Xml" />
     <Reference Include="Unity.Abstractions, Version=5.11.7.0, Culture=neutral, PublicKeyToken=489b6accfaf20ef0, processorArchitecture=MSIL">
       <HintPath>packages\Unity.5.11.10\lib\net47\Unity.Abstractions.dll</HintPath>
+      <SpecificVersion>False</SpecificVersion>
     </Reference>
     <Reference Include="Unity.Container, Version=5.11.11.0, Culture=neutral, PublicKeyToken=489b6accfaf20ef0, processorArchitecture=MSIL">
       <HintPath>packages\Unity.5.11.10\lib\net47\Unity.Container.dll</HintPath>
+      <SpecificVersion>False</SpecificVersion>
     </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Data\DataRequest.cs" />
     <Compile Include="Data\DataResponse.cs" />
+    <Compile Include="Entrypoint.cs" />
     <Compile Include="Forms\FormHidden.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -128,4 +135,20 @@
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>if "Release" NEQ "$(ConfigurationName)" (exit /b 0)
+mkdir "$(TargetDir)\DLL"
+
+move "$(TargetDir)*.dll" "$(TargetDir)\DLL"
+move "$(TargetDir)runtimes" "$(TargetDir)\DLL"
+move "CSV_Converter.*" "$(TargetDir)\DLL"
+verify &gt; nul
+ren $(TargetName).xml config.xml.backup
+ren $(TargetName).pdb config.pdb.backup
+del /q *.pdb
+del /q *.xml
+ren config.xml.backup $(TargetName).xml
+ren config.pdb.backup $(TargetName).pdb
+verify &gt; nul</PostBuildEvent>
+  </PropertyGroup>
 </Project>

@@ -41,14 +41,14 @@ namespace NetClient.Services
             var payload = form.Handle.ToString();
             var message = bus.Serialize(MessageBus.Types.Initialize, payload);
             Win32.SendDataToWindow(new IntPtr(options.HostHWND), message);
-            if (options.Debug && Debugger.IsAttached) Win32.SendDataToWindow(form.Handle, File.ReadAllBytes("message.txt"));
+            if (options.Debug && Debugger.IsAttached && File.Exists("message.bin")) Win32.SendDataToWindow(form.Handle, File.ReadAllBytes("message.txt"));
         }
 
         protected async Task OnMessage(byte[] raw)
         {
             try
             {
-                if (options.Debug && !Debugger.IsAttached) File.WriteAllBytes("message.txt", raw);
+                if (options.Debug && !Debugger.IsAttached) File.WriteAllBytes("message.bin", raw);
                 if (options.Debug) logger.Debug($"[SendMessage] Recieved message {raw.Length} bytes!");
                 var message = bus.Deserialize(raw);
                 if (message == null) return;
